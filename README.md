@@ -85,4 +85,4 @@ All prices remain exact decimal strings (no rounding) until displayed as Philipp
 
 No pause-ordering, activity-log, or unspecified notification controls until their product rules are decided in `../specs.md`.
 
-Scripts: `npm run typecheck`, `npm run lint`, `npm run build`, `npm test`.
+Scripts: `npm run typecheck`, `npm run lint`, `npm run format`, `npm run format:check`, `npm run build`, `npm test`.

@@ -1,10 +1,18 @@
 import { calendarDate } from "@/modules/Settings/schemas";
 import type { DateRange } from "@/api/reports";
 
-export function rangeError(from: string, to: string, required = false): string | null {
+export function rangeError(
+  from: string,
+  to: string,
+  required = false,
+): string | null {
   if (!from && !to) return required ? "Select both dates." : null;
   if (!from || !to) return "Enter both start and end dates.";
-  if (!calendarDate.safeParse(from).success || !calendarDate.safeParse(to).success) return "Use real dates in YYYY-MM-DD format.";
+  if (
+    !calendarDate.safeParse(from).success ||
+    !calendarDate.safeParse(to).success
+  )
+    return "Use real dates in YYYY-MM-DD format.";
   if (from > to) return "End date must be on or after start date.";
   return null;
 }

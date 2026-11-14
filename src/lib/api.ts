@@ -154,14 +154,21 @@ export async function request<T>(
 // access token and single-flight refresh policy as request(), with no credentials
 // or bearer token in the attachment URL.
 export async function attachment(path: string): Promise<Blob> {
-  const send = (token: string | null) => fetch(`${API_URL}${path}`, {
-    method: "GET", credentials: "include", cache: "no-store",
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-  });
+  const send = (token: string | null) =>
+    fetch(`${API_URL}${path}`, {
+      method: "GET",
+      credentials: "include",
+      cache: "no-store",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
   let response = await send(useAuthStore.getState().accessToken);
   if (response.status === 401) {
     const session = await refresh();
-    if (!session) throw new ApiError("Your session has expired. Please sign in again.", 401);
+    if (!session)
+      throw new ApiError(
+        "Your session has expired. Please sign in again.",
+        401,
+      );
     response = await send(session.accessToken);
   }
   if (!response.ok) {

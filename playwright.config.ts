@@ -9,10 +9,12 @@ export default defineConfig({
   reporter: "list",
   use: { baseURL, trace: "retain-on-failure" },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
-  webServer: process.env.PLAYWRIGHT_BASE_URL ? undefined : {
-    command: "npx next start -p 3102",
-    url: baseURL,
-    timeout: 30_000,
-    reuseExistingServer: !process.env.CI,
-  },
+  webServer: process.env.PLAYWRIGHT_BASE_URL
+    ? undefined
+    : {
+        command: "npx next start -p 3102",
+        url: baseURL,
+        timeout: 30_000,
+        reuseExistingServer: !process.env.CI,
+      },
 });

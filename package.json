@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start -p 3001",
     "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "node --import tsx --test tests/*.test.ts",
     "test:e2e": "playwright test",
@@ -33,6 +35,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.3",
+    "prettier": "^3.10.1",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
     "typescript": "^5"

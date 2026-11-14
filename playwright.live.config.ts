@@ -8,6 +8,11 @@ export default defineConfig({
   workers: 1,
   reporter: "list",
   // Authenticated runs use real credentials and tokens. Do not persist traces.
-  use: { baseURL: process.env.LIVE_ADMIN_URL ?? "http://localhost:3001", trace: "off", screenshot: "off", video: "off" },
+  use: {
+    baseURL: process.env.LIVE_ADMIN_URL ?? "http://localhost:3001",
+    trace: "off",
+    screenshot: "off",
+    video: "off",
+  },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
 });

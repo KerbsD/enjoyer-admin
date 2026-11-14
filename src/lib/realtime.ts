@@ -4,8 +4,7 @@ export type RealtimeState = {
   revision: string;
   resources: Record<string, string>;
   scope:
-    | { kind: "staff" }
-    | { kind: "table"; tableId: number; sessionId: string };
+    { kind: "staff" } | { kind: "table"; tableId: number; sessionId: string };
 };
 export type AccessEnded = { status: number; code?: string; message?: string };
 export type WatchOptions = {
@@ -15,7 +14,11 @@ export type WatchOptions = {
   headers: () => HeadersInit | Promise<HeadersInit>;
   // Refetch the indicated GET resources. Resolve only when the UI has applied
   // them; failed refreshes will be retried. Initial sync includes everything.
-  onChange: (state: RealtimeState, changed: string[], sync: boolean) => void | Promise<void>;
+  onChange: (
+    state: RealtimeState,
+    changed: string[],
+    sync: boolean,
+  ) => void | Promise<void>;
   onAccessEnded?: (failure: AccessEnded) => void;
   onTransport?: (transport: "sse" | "polling") => void;
   signal?: AbortSignal;
@@ -110,7 +113,8 @@ export const watchRealtime = (
       (key) =>
         sync || !previous || previous.resources[key] !== state.resources[key],
     );
-    if (changed.length) await options.onChange(state, changed, sync || !previous);
+    if (changed.length)
+      await options.onChange(state, changed, sync || !previous);
     previous = state;
   };
   const ended = (failure: AccessEnded) => {

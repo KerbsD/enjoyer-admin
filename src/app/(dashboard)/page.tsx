@@ -1,2 +1,4 @@
 import { redirect } from "next/navigation";
-export default function Index() { redirect("/board"); }
+export default function Index() {
+  redirect("/board");
+}
