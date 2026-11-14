@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 export const timingsSchema = z.object({
-  idleTimeoutMinutes: z.number({ invalid_type_error: "Enter an idle timeout." }).int("Use a whole number.").min(1).max(1_440),
-  confirmationExpiryMinutes: z.number({ invalid_type_error: "Enter a confirmation expiry." }).int("Use a whole number.").min(1).max(120),
+  idleTimeoutMinutes: z.number({ error: "Enter an idle timeout." }).int("Use a whole number.").min(1).max(1_440),
+  confirmationExpiryMinutes: z.number({ error: "Enter a confirmation expiry." }).int("Use a whole number.").min(1).max(120),
 });
 
 const time = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Use 24-hour HH:mm time.");

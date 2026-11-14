@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const position = z.number({ invalid_type_error: "Enter a whole-number position." }).int().min(0).max(2_147_483_647);
+export const position = z.number({ error: "Enter a whole-number position." }).int().min(0).max(2_147_483_647);
 export const name = z.string().trim().min(1, "Name is required.").max(100);
 export const money = z.string().trim().regex(/^(?:0|[1-9]\d{0,7})(?:\.\d{1,2})?$/, "Use PHP with at most two decimal places.").transform((v) => {
   const [whole, cents = ""] = v.split(".");
