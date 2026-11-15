@@ -14,7 +14,7 @@ import {
   accountSchema,
   accountEditSchema,
   accountSearchSchema,
-} from "../src/modules/Accounts/schema.ts";
+} from "../src/schemas/accounts.ts";
 import { can } from "../src/lib/permissions.ts";
 
 const originalFetch = globalThis.fetch;

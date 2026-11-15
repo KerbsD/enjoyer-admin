@@ -1,25 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import type { z } from "zod";
-import { forgotPassword } from "@/lib/api";
+
 import { Field } from "@/components/ui/Field";
-import { AuthFrame } from "../../components/layout/AuthFrame";
-import { emailSchema } from "./schemas";
+import { AuthFrame } from "@/components/layout/AuthFrame";
+
+import { useForgotPassword } from "./useForgotPassword";
 
 export default function ForgotPassword() {
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<z.infer<typeof emailSchema>>({
-    resolver: zodResolver(emailSchema),
-  });
+  const { register, errors, isSubmitting, message, error, submit } =
+    useForgotPassword();
+
   return (
     <AuthFrame>
       <div className="auth-card">
@@ -31,21 +22,7 @@ export default function ForgotPassword() {
             {message}
           </p>
         ) : (
-          <form
-            onSubmit={handleSubmit(async ({ email }) => {
-              setError("");
-              try {
-                const response = await forgotPassword(email);
-                setMessage(response.message);
-              } catch (cause) {
-                setError(
-                  cause instanceof Error
-                    ? cause.message
-                    : "Could not send the reset link.",
-                );
-              }
-            })}
-          >
+          <form onSubmit={submit}>
             <div className="form-stack">
               <Field
                 label="Email address"

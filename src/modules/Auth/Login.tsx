@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Field } from "@/components/ui/Field";
-import { AuthFrame } from "../../components/layout/AuthFrame";
+import { AuthFrame } from "@/components/layout/AuthFrame";
 import { useLogin } from "./useLogin";
 
 export default function Login() {

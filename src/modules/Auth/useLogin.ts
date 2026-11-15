@@ -9,7 +9,7 @@ import { login, ApiError } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-state";
 import { useAuthReady } from "@/components/auth/AuthProvider";
 import { safeNext } from "@/lib/safe-next";
-import { loginSchema } from "./schemas";
+import { loginSchema } from "@/schemas/auth";
 
 export function useLogin() {
   const router = useRouter();

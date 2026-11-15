@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { accountSchema } from "../src/modules/Accounts/schema.ts";
-import { loginSchema, passwordSchema } from "../src/modules/Auth/schemas.ts";
+import { accountSchema } from "../src/schemas/accounts.ts";
+import { loginSchema, passwordSchema } from "../src/schemas/auth.ts";
 import {
   categorySchema,
   groupSchema,

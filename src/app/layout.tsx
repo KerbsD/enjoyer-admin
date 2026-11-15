@@ -16,9 +16,15 @@ const mono = DM_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Enjoyer · Staff console",
+  title: "Enjoyer · Admin Console",
   description: "Enjoyer coffee shop operations",
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
 };
+
 export default function RootLayout({
   children,
 }: {
