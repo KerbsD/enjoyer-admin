@@ -45,7 +45,6 @@ function SelectionForm({
           .finally(() => setSaving(false));
       }}
     >
-      <h3>Add-ons for {item.name}</h3>
       <p>
         Saving replaces the full list of assigned groups. Shared group edits
         affect every item using them.

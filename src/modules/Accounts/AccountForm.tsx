@@ -12,7 +12,6 @@ export function AccountForm(props: AccountFormProps) {
 
   return (
     <form className="menu-editor account-form" onSubmit={submit}>
-      <h2>{account ? `Edit ${account.name}` : "Invite a team member"}</h2>
       <div className="editor-grid">
         <Field
           id={`account-name-${account?.id ?? "new"}`}

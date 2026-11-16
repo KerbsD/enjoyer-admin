@@ -8,6 +8,7 @@ import type { z } from "zod";
 import type { Category, MenuItem } from "@/api/menu";
 import { createItem, setAvailability, updateItem } from "@/api/menu";
 import { Field } from "@/components/ui/Field";
+import { Modal } from "@/components/ui/Modal";
 import { peso } from "@/lib/shop-format";
 import { itemSchema } from "./schemas";
 import { useCategories, useItems, useRefreshMenu } from "./useMenu";
@@ -61,7 +62,6 @@ function ItemForm({
         }
       })}
     >
-      <h3>{item ? `Edit ${item.name}` : "New menu item"}</h3>
       <div className="editor-grid">
         <label className="field">
           <span className="eyebrow">Category</span>
@@ -185,7 +185,10 @@ export function ItemEditor() {
         <button
           className="button"
           disabled={!cats.data?.length}
-          onClick={() => setEditing("new")}
+          onClick={() => {
+            setEditing("new");
+            setAssigning(null);
+          }}
         >
           Add item
         </button>
@@ -242,13 +245,19 @@ export function ItemEditor() {
           <div className="action-row">
             <button
               className="button button-outline"
-              onClick={() => setEditing(item.id)}
+              onClick={() => {
+                setEditing(item.id);
+                setAssigning(null);
+              }}
             >
               Edit
             </button>
             <button
               className="button button-outline"
-              onClick={() => setAssigning(item.id)}
+              onClick={() => {
+                setAssigning(item.id);
+                setEditing(null);
+              }}
             >
               Add-ons
             </button>
@@ -284,19 +293,31 @@ export function ItemEditor() {
       {editing !== null &&
         (editing === "new" || selected) &&
         !!cats.data?.length && (
-          <ItemForm
-            key={editing}
-            item={selected}
-            categories={cats.data}
+          <Modal
+            open
             onClose={() => setEditing(null)}
-          />
+            title={selected ? `Edit ${selected.name}` : "New menu item"}
+          >
+            <ItemForm
+              key={editing}
+              item={selected}
+              categories={cats.data}
+              onClose={() => setEditing(null)}
+            />
+          </Modal>
         )}
       {assignedItem && (
-        <AssignmentEditor
-          key={assignedItem.id}
-          item={assignedItem}
+        <Modal
+          open
           onClose={() => setAssigning(null)}
-        />
+          title={`Add-ons for ${assignedItem.name}`}
+        >
+          <AssignmentEditor
+            key={assignedItem.id}
+            item={assignedItem}
+            onClose={() => setAssigning(null)}
+          />
+        </Modal>
       )}
     </section>
   );

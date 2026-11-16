@@ -10,6 +10,7 @@ import {
   type Holiday,
   type HoursInput,
 } from "@/api/settings";
+import { Modal } from "@/components/ui/Modal";
 import { staffKeys } from "@/modules/Staff/useStaffRealtime";
 import { HoursForm } from "./HoursForm";
 import { calendarDate } from "./schemas";
@@ -71,7 +72,6 @@ function HolidayEditor({
       )}
       <HoursForm
         key={holiday?.date ?? "new"}
-        label={holiday ? `Override for ${holiday.date}` : "New date override"}
         initial={holiday}
         saving={saving}
         onSave={save}
@@ -215,11 +215,19 @@ export function Holidays() {
         </div>
       ))}
       {editing !== null && (editing === "new" || selected) && (
-        <HolidayEditor
-          key={editing}
-          holiday={selected}
+        <Modal
+          open
           onClose={() => setEditing(null)}
-        />
+          title={
+            selected ? `Override for ${selected.date}` : "New date override"
+          }
+        >
+          <HolidayEditor
+            key={editing}
+            holiday={selected}
+            onClose={() => setEditing(null)}
+          />
+        </Modal>
       )}
     </section>
   );

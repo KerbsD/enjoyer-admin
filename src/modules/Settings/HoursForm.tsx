@@ -12,14 +12,12 @@ type Initial = {
 
 export function HoursForm({
   initial,
-  label,
   saving,
   onSave,
   onCancel,
   acknowledge,
 }: {
   initial?: Initial;
-  label: string;
   saving: boolean;
   onSave: (input: HoursInput) => Promise<void>;
   onCancel: () => void;
@@ -52,7 +50,6 @@ export function HoursForm({
   };
   return (
     <form className="menu-editor hours-form" onSubmit={submit}>
-      <h3>{label}</h3>
       <label className="check-item">
         <input
           type="checkbox"

@@ -8,6 +8,7 @@ import type { z } from "zod";
 import type { Category } from "@/api/menu";
 import { createCategory, updateCategory } from "@/api/menu";
 import { Field } from "@/components/ui/Field";
+import { Modal } from "@/components/ui/Modal";
 import { useCategories, useRefreshMenu } from "./useMenu";
 import { categorySchema } from "./schemas";
 
@@ -49,7 +50,6 @@ function CategoryForm({
         }
       })}
     >
-      <h3>{category ? `Edit ${category.name}` : "New category"}</h3>
       <div className="editor-grid">
         <Field
           label="Category name"
@@ -134,11 +134,17 @@ export function CategoryEditor() {
         </div>
       ))}
       {editing !== null && (editing === "new" || category) && (
-        <CategoryForm
-          key={editing}
-          category={category}
+        <Modal
+          open
           onClose={() => setEditing(null)}
-        />
+          title={category ? `Edit ${category.name}` : "New category"}
+        >
+          <CategoryForm
+            key={editing}
+            category={category}
+            onClose={() => setEditing(null)}
+          />
+        </Modal>
       )}
     </section>
   );

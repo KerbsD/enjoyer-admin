@@ -17,6 +17,7 @@ import {
   type QrFormat,
 } from "@/api/tables";
 import { Field } from "@/components/ui/Field";
+import { Modal } from "@/components/ui/Modal";
 import { useAuthStore } from "@/lib/auth-state";
 import { staffKeys, useStaffRealtime } from "@/modules/Staff/useStaffRealtime";
 import { tableSchema } from "./schema";
@@ -65,7 +66,6 @@ function TableForm({
         }
       })}
     >
-      <h2>{table ? `Edit ${table.name}` : "Add physical table"}</h2>
       <div className="editor-grid">
         <Field
           id="table-name"
@@ -183,15 +183,21 @@ function TableCard({ table }: { table: ManagedTable }) {
         <button
           type="button"
           className="button button-outline"
-          onClick={() => setEditing(!editing)}
+          onClick={() => {
+            setEditing(true);
+            setConfirming(false);
+          }}
         >
-          {editing ? "Close editor" : "Edit name & limit"}
+          Edit name & limit
         </button>
         <button
           type="button"
           className="button button-outline"
           disabled={saving}
-          onClick={() => setConfirming(!confirming)}
+          onClick={() => {
+            setConfirming(!confirming);
+            setEditing(false);
+          }}
         >
           {table.active ? "Deactivate" : "Reactivate"}
         </button>
@@ -249,13 +255,17 @@ function TableCard({ table }: { table: ManagedTable }) {
           </div>
         </div>
       )}
-      {editing && (
+      <Modal
+        open={editing}
+        onClose={() => setEditing(false)}
+        title={`Edit ${table.name}`}
+      >
         <TableForm
           key={table.id}
           table={table}
           onClose={() => setEditing(false)}
         />
-      )}
+      </Modal>
     </article>
   );
 }
@@ -343,7 +353,13 @@ function ManagerTables() {
           View live table sessions →
         </Link>
       </p>
-      {creating && <TableForm onClose={() => setCreating(false)} />}
+      <Modal
+        open={creating}
+        onClose={() => setCreating(false)}
+        title="Add physical table"
+      >
+        <TableForm onClose={() => setCreating(false)} />
+      </Modal>
       {query.isPending && (
         <p role="status" className="feature-note">
           Loading tables…

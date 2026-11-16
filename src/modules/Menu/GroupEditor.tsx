@@ -9,6 +9,7 @@ import {
   updateGroup,
   updateOption,
 } from "@/api/menu";
+import { Modal } from "@/components/ui/Modal";
 import { peso } from "@/lib/shop-format";
 import { groupSchema, optionSchema } from "./schemas";
 import { useGroups, useRefreshMenu } from "./useMenu";
@@ -79,7 +80,6 @@ function GroupForm({
   };
   return (
     <form className="menu-editor" onSubmit={(event) => void submit(event)}>
-      <h3>{group ? `Edit ${group.name}` : "New option group"}</h3>
       <div className="editor-grid">
         <label className="field">
           <span className="eyebrow">Group name</span>
@@ -226,9 +226,6 @@ function ChoiceForm({
           .finally(() => setSaving(false));
       }}
     >
-      <h3>
-        {option ? `Edit ${option.name}` : `Add a choice to ${group.name}`}
-      </h3>
       <div className="editor-grid">
         <label className="field">
           <span className="eyebrow">Choice name</span>
@@ -316,7 +313,13 @@ export function GroupEditor() {
             selections ≥ 1.
           </p>
         </div>
-        <button className="button" onClick={() => setEditing("new")}>
+        <button
+          className="button"
+          onClick={() => {
+            setEditing("new");
+            setChoice(null);
+          }}
+        >
           Add group
         </button>
       </div>
@@ -342,13 +345,19 @@ export function GroupEditor() {
             <div className="action-row">
               <button
                 className="button button-outline"
-                onClick={() => setEditing(row.id)}
+                onClick={() => {
+                  setEditing(row.id);
+                  setChoice(null);
+                }}
               >
                 Edit group
               </button>
               <button
                 className="button button-outline"
-                onClick={() => setChoice({ groupId: row.id })}
+                onClick={() => {
+                  setChoice({ groupId: row.id });
+                  setEditing(null);
+                }}
               >
                 Add choice
               </button>
@@ -365,7 +374,10 @@ export function GroupEditor() {
               </div>
               <button
                 className="button button-outline"
-                onClick={() => setChoice({ groupId: row.id, optionId: opt.id })}
+                onClick={() => {
+                  setChoice({ groupId: row.id, optionId: opt.id });
+                  setEditing(null);
+                }}
               >
                 Edit
               </button>
@@ -374,19 +386,35 @@ export function GroupEditor() {
         </div>
       ))}
       {editing !== null && (editing === "new" || group) && (
-        <GroupForm
-          key={editing}
-          group={group}
+        <Modal
+          open
           onClose={() => setEditing(null)}
-        />
+          title={group ? `Edit ${group.name}` : "New option group"}
+        >
+          <GroupForm
+            key={editing}
+            group={group}
+            onClose={() => setEditing(null)}
+          />
+        </Modal>
       )}
       {choice && choiceGroup && (
-        <ChoiceForm
-          key={`${choice.groupId}-${choice.optionId ?? "new"}`}
-          group={choiceGroup}
-          option={currentChoice}
+        <Modal
+          open
           onClose={() => setChoice(null)}
-        />
+          title={
+            currentChoice
+              ? `Edit ${currentChoice.name}`
+              : `Add a choice to ${choiceGroup.name}`
+          }
+        >
+          <ChoiceForm
+            key={`${choice.groupId}-${choice.optionId ?? "new"}`}
+            group={choiceGroup}
+            option={currentChoice}
+            onClose={() => setChoice(null)}
+          />
+        </Modal>
       )}
     </section>
   );

@@ -1,4 +1,5 @@
 import { type AccountFilters } from "@/api/accounts";
+import { Modal } from "@/components/ui/Modal";
 
 import { AccountCard } from "./AccountCard";
 import { AccountForm } from "./AccountForm";
@@ -69,9 +70,13 @@ export function OwnerAccounts() {
           </button>
         </div>
       )}
-      {creating && (
+      <Modal
+        open={creating}
+        onClose={() => setCreating(false)}
+        title="Invite a team member"
+      >
         <AccountForm onClose={() => setCreating(false)} onNotice={setNotice} />
-      )}
+      </Modal>
       <form className="report-controls" onSubmit={apply}>
         <label className="field">
           <span>Search name or email</span>

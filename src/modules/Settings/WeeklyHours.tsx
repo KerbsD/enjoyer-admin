@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { getWeeklyHours, saveWeeklyDay, type HoursInput } from "@/api/settings";
+import { Modal } from "@/components/ui/Modal";
 import { staffKeys } from "@/modules/Staff/useStaffRealtime";
 import { HoursForm } from "./HoursForm";
 
@@ -89,19 +90,24 @@ export function WeeklyHours() {
             {day.configured ? "Edit" : "Set hours"}
           </button>
           {editing === day.dayOfWeek && (
-            <HoursForm
-              key={day.dayOfWeek}
-              label={`${daysOfWeek[day.dayOfWeek]} hours`}
-              initial={day}
-              saving={saving}
-              onSave={(input) => save(day.dayOfWeek, input)}
-              onCancel={() => setEditing(null)}
-              acknowledge={
-                firstConfiguration
-                  ? "I understand that saving the first day makes every other unconfigured weekday closed."
-                  : undefined
-              }
-            />
+            <Modal
+              open
+              onClose={() => setEditing(null)}
+              title={`${daysOfWeek[day.dayOfWeek]} hours`}
+            >
+              <HoursForm
+                key={day.dayOfWeek}
+                initial={day}
+                saving={saving}
+                onSave={(input) => save(day.dayOfWeek, input)}
+                onCancel={() => setEditing(null)}
+                acknowledge={
+                  firstConfiguration
+                    ? "I understand that saving the first day makes every other unconfigured weekday closed."
+                    : undefined
+                }
+              />
+            </Modal>
           )}
         </div>
       ))}

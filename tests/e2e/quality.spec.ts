@@ -198,6 +198,50 @@ test("Manager sees reports but not accounts", async ({ page }) => {
   await expect(page.getByText("No orders in this range.")).toBeVisible();
 });
 
+test("add and edit dialogs are reused across menu, tables and settings", async ({
+  page,
+}) => {
+  await mockApi(page, "owner");
+  await page.goto("/menu");
+  await page
+    .getByRole("navigation", { name: "Menu sections" })
+    .getByRole("button", { name: "Categories" })
+    .click();
+  const addCategory = page.getByRole("button", { name: "Add category" });
+  await addCategory.click();
+  const categoryDialog = page.getByRole("dialog", { name: "New category" });
+  await expect(categoryDialog).toBeVisible();
+  await expect(
+    page.getByRole("textbox", { name: "Category name" }),
+  ).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(categoryDialog).toHaveCount(0);
+  await expect(addCategory).toBeFocused();
+
+  await page.goto("/table-management");
+  const addTable = page.getByRole("button", { name: "Add table" });
+  await addTable.click();
+  const tableDialog = page.getByRole("dialog", { name: "Add physical table" });
+  await expect(tableDialog).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "Table name" })).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(tableDialog).toHaveCount(0);
+  await expect(addTable).toBeFocused();
+
+  await page.goto("/settings");
+  await page.getByRole("button", { name: "Holiday overrides" }).click();
+  const addOverride = page.getByRole("button", { name: "Add date override" });
+  await addOverride.click();
+  const overrideDialog = page.getByRole("dialog", {
+    name: "New date override",
+  });
+  await expect(overrideDialog).toBeVisible();
+  await expect(page.getByLabel("Date (Manila calendar)")).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(overrideDialog).toHaveCount(0);
+  await expect(addOverride).toBeFocused();
+});
+
 test("Owner account invite shows email failure and mobile navigation works by keyboard", async ({
   page,
 }) => {
@@ -229,6 +273,18 @@ test("Owner account invite shows email failure and mobile navigation works by ke
   await expect(menu).toHaveAttribute("aria-expanded", "false");
   await expect(menu).toBeFocused();
   await page.getByRole("button", { name: "Invite team member" }).click();
+  const inviteDialog = page.getByRole("dialog", {
+    name: "Invite a team member",
+  });
+  await expect(inviteDialog).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "Name" })).toBeFocused();
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await page.keyboard.press("Escape");
+  await expect(inviteDialog).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Invite team member" }),
+  ).toBeFocused();
+  await page.getByRole("button", { name: "Invite team member" }).click();
   await page.getByRole("textbox", { name: "Name" }).fill("New staff");
   await page.getByRole("textbox", { name: "Email" }).fill("new@example.com");
   await page.getByRole("button", { name: "Create and email invite" }).click();
@@ -237,6 +293,15 @@ test("Owner account invite shows email failure and mobile navigation works by ke
       .getByRole("status")
       .filter({ hasText: "invite email could not be sent" }),
   ).toBeVisible();
+  const editButton = page
+    .getByRole("button", { name: "Edit name and role" })
+    .first();
+  await editButton.click();
+  const editDialog = page.getByRole("dialog", { name: "Edit Ana" });
+  await expect(editDialog).toBeVisible();
+  await page.getByRole("button", { name: "Cancel" }).click();
+  await expect(editDialog).toHaveCount(0);
+  await expect(editButton).toBeFocused();
 });
 
 test("report custom dates reject incomplete ranges; CSV uses a separate range", async ({

@@ -1,4 +1,6 @@
+import { Modal } from "@/components/ui/Modal";
 import { shopTime, statusLabel } from "@/lib/shop-format";
+
 import { AccountForm } from "./AccountForm";
 import { useAccountCard } from "./useAccountCard";
 
@@ -55,11 +57,11 @@ export function AccountCard(props: AccountCardProps) {
           type="button"
           className="button button-outline"
           onClick={() => {
-            setEditing(!editing);
+            setEditing(true);
             setConfirming(false);
           }}
         >
-          {editing ? "Close editor" : "Edit name and role"}
+          Edit name and role
         </button>
         <button
           type="button"
@@ -121,14 +123,18 @@ export function AccountCard(props: AccountCardProps) {
           </div>
         </div>
       )}
-      {editing && (
+      <Modal
+        open={editing}
+        onClose={() => setEditing(false)}
+        title={`Edit ${account.name}`}
+      >
         <AccountForm
           key={account.id}
           account={account}
           onClose={() => setEditing(false)}
           onNotice={onNotice}
         />
-      )}
+      </Modal>
     </article>
   );
 }
