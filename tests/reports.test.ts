@@ -8,7 +8,11 @@ import {
   exportOrders,
   queryString,
 } from "../src/api/reports.ts";
-import { rangeError, rangeOf } from "../src/modules/Reports/validation.ts";
+import {
+  historySearchSchema,
+  rangeError,
+  rangeOf,
+} from "../src/schemas/reports.ts";
 import { can } from "../src/lib/permissions.ts";
 
 const originalFetch = globalThis.fetch;
@@ -119,6 +123,14 @@ test("history passes pagination and filters, fetches full detail, and omits blan
   await getHistoricalOrder("abc-123");
   assert.equal(new URL(paths[2]!).pathname, "/admin/orders/abc-123");
   assert.equal(queryString({ q: undefined, limit: 25, from: "" }), "limit=25");
+  assert.equal(historySearchSchema.parse("  noodles  "), "noodles");
+  assert.equal(historySearchSchema.safeParse("x".repeat(100)).success, true);
+  const tooLong = historySearchSchema.safeParse("x".repeat(101));
+  assert.equal(tooLong.success, false);
+  assert.equal(
+    tooLong.success ? undefined : tooLong.error.issues[0]?.message,
+    "Search must be 100 characters or fewer.",
+  );
 });
 
 test("CSV export uses only its own date range and authenticated binary download with refresh", async () => {
