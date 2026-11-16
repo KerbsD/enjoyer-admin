@@ -14,7 +14,7 @@ import {
   daySchema,
   timingsSchema,
 } from "../src/schemas/settings.ts";
-import { tableSchema } from "../src/modules/Tables/schema.ts";
+import { tableSchema } from "../src/schemas/tables.ts";
 
 const message = (
   schema: {
