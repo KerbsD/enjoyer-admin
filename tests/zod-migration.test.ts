@@ -8,7 +8,7 @@ import {
   itemSchema,
   money,
   position,
-} from "../src/modules/Menu/schemas.ts";
+} from "../src/schemas/menu.ts";
 import {
   calendarDate,
   daySchema,

@@ -2,15 +2,9 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { categories, items, optionGroups, publicMenu } from "@/api/menu";
+import { menuKeys } from "@/constants/menu";
 import { staffKeys } from "@/modules/Staff/useStaffRealtime";
 
-export const menuKeys = {
-  categories: ["menu", "categories"] as const,
-  items: ["menu", "items"] as const,
-  groups: ["menu", "groups"] as const,
-  visible: ["menu", "visible"] as const,
-  assigned: (id: number) => ["menu", "assigned", id] as const,
-};
 export const useCategories = () =>
   useQuery({
     queryKey: menuKeys.categories,

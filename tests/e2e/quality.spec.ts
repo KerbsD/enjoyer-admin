@@ -14,6 +14,44 @@ const account = {
   createdAt: created,
   updatedAt: created,
 };
+const category = {
+  id: 1,
+  name: "Drinks",
+  sortOrder: 0,
+  createdAt: created,
+  updatedAt: created,
+};
+const menuItem = {
+  id: 7,
+  categoryId: category.id,
+  name: "Latte",
+  description: "Espresso and milk",
+  price: "120.00",
+  isSpicy: false,
+  isAvailable: true,
+  isHidden: false,
+  sortOrder: 0,
+  createdAt: created,
+  updatedAt: created,
+};
+const optionGroup = {
+  id: 3,
+  name: "Milk",
+  required: false,
+  minSelections: 0,
+  maxSelections: 1,
+  sortOrder: 0,
+  options: [
+    {
+      id: 9,
+      groupId: 3,
+      name: "Oat",
+      priceDelta: "20.00",
+      isAvailable: true,
+      sortOrder: 0,
+    },
+  ],
+};
 
 async function mockApi(page: Page, role: Role) {
   const user = {
@@ -128,7 +166,35 @@ async function mockApi(page: Page, role: Role) {
           body: '"Order ID","Time (UTC)"\r\n',
           headers: { ...cors, "content-type": "text/csv" },
         });
-      if (path === "/admin/menu-items" || path === "/admin/tables")
+      if (path === "/admin/categories")
+        return route.fulfill({
+          json: {
+            success: true,
+            data: [category],
+            pagination: { limit: 100, offset: 0, total: 1, hasMore: false },
+          },
+          headers: cors,
+        });
+      if (path === "/admin/menu-items/7/option-groups")
+        return route.fulfill({
+          json: { success: true, data: [] },
+          headers: cors,
+        });
+      if (path === "/admin/menu-items")
+        return route.fulfill({
+          json: {
+            success: true,
+            data: [menuItem],
+            pagination: { limit: 100, offset: 0, total: 1, hasMore: false },
+          },
+          headers: cors,
+        });
+      if (path === "/admin/option-groups")
+        return route.fulfill({
+          json: { success: true, data: [optionGroup] },
+          headers: cors,
+        });
+      if (path === "/admin/tables")
         return route.fulfill({
           json: {
             success: true,
@@ -240,6 +306,62 @@ test("add and edit dialogs are reused across menu, tables and settings", async (
   await page.keyboard.press("Escape");
   await expect(overrideDialog).toHaveCount(0);
   await expect(addOverride).toBeFocused();
+});
+
+test("menu item and option group editors reuse the modal controls", async ({
+  page,
+}) => {
+  await mockApi(page, "owner");
+  await page.goto("/menu");
+
+  const addItem = page.getByRole("button", { name: "Add item" });
+  await addItem.click();
+  const itemDialog = page.getByRole("dialog", { name: "New menu item" });
+  await expect(itemDialog).toBeVisible();
+  await expect(
+    page.getByRole("combobox", { name: "Category", exact: true }),
+  ).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(itemDialog).toHaveCount(0);
+  await expect(addItem).toBeFocused();
+
+  const addOns = page.getByRole("button", { name: "Add-ons" });
+  await addOns.click();
+  const assignmentDialog = page.getByRole("dialog", {
+    name: "Add-ons for Latte",
+  });
+  await expect(assignmentDialog).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(assignmentDialog).toHaveCount(0);
+  await expect(addOns).toBeFocused();
+
+  await page
+    .getByRole("navigation", { name: "Menu sections" })
+    .getByRole("button", { name: "Option groups" })
+    .click();
+  const addGroup = page.getByRole("button", { name: "Add group" });
+  await addGroup.click();
+  const groupDialog = page.getByRole("dialog", { name: "New option group" });
+  await expect(groupDialog).toBeVisible();
+  await expect(
+    page.getByRole("textbox", { name: "Group name", exact: true }),
+  ).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(groupDialog).toHaveCount(0);
+  await expect(addGroup).toBeFocused();
+
+  const addChoice = page.getByRole("button", { name: "Add choice" });
+  await addChoice.click();
+  const choiceDialog = page.getByRole("dialog", {
+    name: "Add a choice to Milk",
+  });
+  await expect(choiceDialog).toBeVisible();
+  await expect(
+    page.getByRole("textbox", { name: "Choice name", exact: true }),
+  ).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(choiceDialog).toHaveCount(0);
+  await expect(addChoice).toBeFocused();
 });
 
 test("Owner account invite shows email failure and mobile navigation works by keyboard", async ({
