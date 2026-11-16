@@ -43,7 +43,7 @@ export function useBoard() {
     queryFn: async ({ signal }) => {
       const pages = await Promise.all(
         boardColumns.map(({ status }) =>
-          listAllOrders(status, undefined, signal),
+          listAllOrders(status, undefined, signal, true),
         ),
       );
       return pages.flat();

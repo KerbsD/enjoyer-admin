@@ -1,4 +1,9 @@
 import { useAuthStore, type User } from "./auth-state";
+import {
+  allowSessionRestore,
+  locallySignedOut,
+  markLocallySignedOut,
+} from "./session-restore";
 
 export const API_URL = (
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
@@ -64,6 +69,7 @@ function apiError(response: Response, payload: unknown) {
 }
 
 async function refresh(): Promise<Session | null> {
+  if (locallySignedOut()) return null;
   if (refreshPromise) return refreshPromise;
   const generation = authGeneration;
   const work = (async () => {
@@ -186,13 +192,21 @@ export async function login(email: string, pwd: string) {
     auth: false,
   });
   if (!isSession(session)) throw new ApiError("Unexpected login response.", 0);
+  allowSessionRestore();
   setSession(session);
   return session;
 }
 
 export async function logout() {
-  await request("/auth/logout", { method: "POST", auth: false });
-  clearSession();
+  try {
+    await request("/auth/logout", { method: "POST", auth: false });
+  } finally {
+    // Never leave a shared terminal signed in locally after a network error.
+    // Suppress cookie-based restoration until the next explicit login: the
+    // server may still have a live HttpOnly cookie if the request failed.
+    markLocallySignedOut();
+    clearSession();
+  }
 }
 
 export const currentUser = () =>

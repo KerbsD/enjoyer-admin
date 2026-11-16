@@ -109,13 +109,13 @@ export function AppShell({ children }: { children: ReactNode }) {
               setBusy(true);
               try {
                 await logout();
-                client.clear();
-                router.replace("/login");
               } catch {
-                toast.error(
-                  "Could not sign out. Check your connection and try again.",
+                toast.warning(
+                  "Signed out on this device, but server sign-out could not be confirmed. Close other sessions when connected.",
                 );
               } finally {
+                client.clear();
+                router.replace("/login");
                 setBusy(false);
               }
             }}

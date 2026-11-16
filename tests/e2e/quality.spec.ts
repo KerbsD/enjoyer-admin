@@ -237,6 +237,25 @@ test("private routes redirect signed-out visitors to sign-in", async ({
   await expect(page).toHaveURL(/\/login\?next=%2Faccounts/);
 });
 
+test("failed server sign-out cannot restore the old cookie on reload", async ({
+  page,
+}) => {
+  await mockApi(page, "owner");
+  await page.route("**/auth/logout", (route) =>
+    route.fulfill({ status: 503, json: { message: "Unavailable" } }),
+  );
+  await page.goto("/board");
+  await expect(
+    page.getByRole("heading", { name: /live orders/i }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: /sign out/i }).click();
+  await expect(page).toHaveURL(/\/login$/);
+  await page.reload();
+  await expect(page.getByRole("heading", { name: /sign in/i })).toBeVisible();
+  await page.goto("/board");
+  await expect(page).toHaveURL(/\/login\?next=%2Fboard/);
+});
+
 test("Staff navigation hides management and direct Owner page shows access restriction", async ({
   page,
 }) => {

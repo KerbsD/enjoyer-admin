@@ -70,8 +70,7 @@ export async function* sseMessages(
   }
 }
 
-const terminalStatus = (status: number) =>
-  [401, 403, 404, 409].includes(status);
+const terminalStatus = (status: number) => [401, 403, 409].includes(status);
 const wait = (ms: number, signal: AbortSignal): Promise<void> =>
   new Promise((resolve) => {
     if (signal.aborted) return resolve();
