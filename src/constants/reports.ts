@@ -1,6 +1,6 @@
 import type { DashboardParams, HistoryFilters } from "@/api/reports";
 import type { OrderStatus } from "@/api/staff";
-import { staffKeys } from "@/modules/Staff/useStaffRealtime";
+import { staffKeys } from "@/constants/staff";
 import type { HistoryDraft } from "@/types/reports";
 
 export const reportStatuses: OrderStatus[] = [

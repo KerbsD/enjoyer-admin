@@ -1,7 +1,7 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { staffKeys } from "@/modules/Staff/useStaffRealtime";
+import { staffKeys } from "@/constants/staff";
 
 export function useRefreshSettings() {
   const client = useQueryClient();

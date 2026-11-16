@@ -6,24 +6,13 @@ import { API_URL, clearSession, restoreSession } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-state";
 import { watchRealtime } from "@/lib/realtime";
 import type { Order } from "@/api/staff";
-
-export const staffKeys = {
-  orders: ["staff", "orders"] as const,
-  order: (id: string) => ["staff", "order", id] as const,
-  tables: ["staff", "tables"] as const,
-  table: (id: number) => ["staff", "table", id] as const,
-  menu: ["menu"] as const,
-  managedTables: ["tables", "manage"] as const,
-  settings: ["settings"] as const,
-  reports: ["reports"] as const,
-};
+import { staffKeys } from "@/constants/staff";
+import type { StaffTransport } from "@/types/staff";
 
 export function useStaffRealtime(onNewOrders?: (orders: Order[]) => void) {
   const token = useAuthStore((s) => s.accessToken);
   const client = useQueryClient();
-  const [transport, setTransport] = useState<
-    "connecting" | "sse" | "polling" | "ended"
-  >("connecting");
+  const [transport, setTransport] = useState<StaffTransport>("connecting");
   useEffect(() => {
     if (!token) return;
     const watcher = watchRealtime({

@@ -1,4 +1,4 @@
-import { staffKeys } from "@/modules/Staff/useStaffRealtime";
+import { staffKeys } from "@/constants/staff";
 
 export const settingsKeys = {
   timings: [...staffKeys.settings, "timings"] as const,

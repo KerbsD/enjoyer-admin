@@ -10,7 +10,7 @@ import {
   historyPageSize,
   reportKeys,
 } from "@/constants/reports";
-import { staffKeys } from "@/modules/Staff/useStaffRealtime";
+import { staffKeys } from "@/constants/staff";
 import { historySearchSchema, rangeError, rangeOf } from "@/schemas/reports";
 import type { HistoryDraft } from "@/types/reports";
 

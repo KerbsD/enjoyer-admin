@@ -3,7 +3,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { categories, items, optionGroups, publicMenu } from "@/api/menu";
 import { menuKeys } from "@/constants/menu";
-import { staffKeys } from "@/modules/Staff/useStaffRealtime";
+import { staffKeys } from "@/constants/staff";
 
 export const useCategories = () =>
   useQuery({

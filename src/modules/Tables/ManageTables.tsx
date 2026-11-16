@@ -19,7 +19,8 @@ import {
 import { Field } from "@/components/ui/Field";
 import { Modal } from "@/components/ui/Modal";
 import { useAuthStore } from "@/lib/auth-state";
-import { staffKeys, useStaffRealtime } from "@/modules/Staff/useStaffRealtime";
+import { staffKeys } from "@/constants/staff";
+import { useStaffRealtime } from "@/modules/Staff/useStaffRealtime";
 import { tableSchema } from "./schema";
 import { saveAttachment } from "@/lib/save-attachment";
 

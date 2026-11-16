@@ -13,7 +13,11 @@ import { createAccount, updateAccount } from "@/api/accounts";
 
 import type { AccountFormProps } from "@/types/accounts";
 
-export function useAccountForm({ account, onClose, onNotice }: AccountFormProps) {
+export function useAccountForm({
+  account,
+  onClose,
+  onNotice,
+}: AccountFormProps) {
   const client = useQueryClient();
   const [error, setError] = useState("");
   const actorId = useAuthStore((s) => s.user?.id);
