@@ -1,43 +1,10 @@
-"use client";
-
-import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
-import { getWeeklyHours, saveWeeklyDay, type HoursInput } from "@/api/settings";
-import { Modal } from "@/components/ui/Modal";
-import { staffKeys } from "@/modules/Staff/useStaffRealtime";
-import { HoursForm } from "./HoursForm";
-
-export const daysOfWeek = [
-  "Sunday",
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-] as const;
+import { useWeeklyHours } from "./useWeeklyHours";
+import { WeeklyDayRow } from "./WeeklyDayRow";
 
 export function WeeklyHours() {
-  const queryClient = useQueryClient();
-  const query = useQuery({
-    queryKey: ["settings", "weekly"],
-    queryFn: ({ signal }) => getWeeklyHours(signal),
-  });
-  const [editing, setEditing] = useState<number | null>(null);
-  const [saving, setSaving] = useState(false);
-  const firstConfiguration = !query.data?.data.some((day) => day.configured);
-  const save = async (day: number, input: HoursInput) => {
-    setSaving(true);
-    try {
-      await saveWeeklyDay(day, input);
-      await queryClient.invalidateQueries({ queryKey: staffKeys.settings });
-      toast.success(`${daysOfWeek[day]} hours saved.`);
-      setEditing(null);
-    } finally {
-      setSaving(false);
-    }
-  };
+  const { query, editing, setEditing, saving, firstConfiguration, save } =
+    useWeeklyHours();
+
   return (
     <section className="menu-section">
       <div className="section-heading">
@@ -71,45 +38,16 @@ export function WeeklyHours() {
         </p>
       )}
       {query.data?.data.map((day) => (
-        <div className="weekly-day" key={day.dayOfWeek}>
-          <div>
-            <strong>{daysOfWeek[day.dayOfWeek]}</strong>
-            <span>
-              {day.configured
-                ? day.closed
-                  ? "Closed"
-                  : `${day.openTime}–${day.closeTime} · Manila time`
-                : "Not set — treated closed once weekly hours are configured"}
-            </span>
-          </div>
-          <button
-            type="button"
-            className="button button-outline"
-            onClick={() => setEditing(day.dayOfWeek)}
-          >
-            {day.configured ? "Edit" : "Set hours"}
-          </button>
-          {editing === day.dayOfWeek && (
-            <Modal
-              open
-              onClose={() => setEditing(null)}
-              title={`${daysOfWeek[day.dayOfWeek]} hours`}
-            >
-              <HoursForm
-                key={day.dayOfWeek}
-                initial={day}
-                saving={saving}
-                onSave={(input) => save(day.dayOfWeek, input)}
-                onCancel={() => setEditing(null)}
-                acknowledge={
-                  firstConfiguration
-                    ? "I understand that saving the first day makes every other unconfigured weekday closed."
-                    : undefined
-                }
-              />
-            </Modal>
-          )}
-        </div>
+        <WeeklyDayRow
+          key={day.dayOfWeek}
+          day={day}
+          editing={editing === day.dayOfWeek}
+          saving={saving}
+          firstConfiguration={firstConfiguration}
+          onEdit={() => setEditing(day.dayOfWeek)}
+          onClose={() => setEditing(null)}
+          onSave={(input) => save(day.dayOfWeek, input)}
+        />
       ))}
     </section>
   );

@@ -13,7 +13,7 @@ import {
   calendarDate,
   daySchema,
   timingsSchema,
-} from "../src/modules/Settings/schemas.ts";
+} from "../src/schemas/settings.ts";
 import { tableSchema } from "../src/modules/Tables/schema.ts";
 
 const message = (

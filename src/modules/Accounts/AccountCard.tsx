@@ -6,9 +6,7 @@ import { useAccountCard } from "./useAccountCard";
 
 import type { AccountCardProps } from "@/types/accounts";
 
-export function AccountCard(props: AccountCardProps) {
-  const { account, onNotice } = props;
-
+export function AccountCard({ account, onNotice }: AccountCardProps) {
   const {
     self,
     editing,

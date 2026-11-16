@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { DateRange } from "@/api/reports";
-import { calendarDate } from "@/modules/Settings/schemas";
+import { calendarDate } from "@/schemas/settings";
 
 export const historySearchSchema = z
   .string()

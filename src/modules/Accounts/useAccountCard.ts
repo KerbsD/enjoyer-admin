@@ -14,9 +14,7 @@ import { accountKey } from "@/constants/account";
 
 import type { AccountCardProps } from "@/types/accounts";
 
-export function useAccountCard(props: AccountCardProps) {
-  const { account, onNotice } = props;
-
+export function useAccountCard({ account, onNotice }: AccountCardProps) {
   const client = useQueryClient();
   const actorId = useAuthStore((s) => s.user?.id);
   const self = actorId === account.id;

@@ -5,10 +5,9 @@ import { useAccountForm } from "./useAccountForm";
 
 import type { AccountFormProps } from "@/types/accounts";
 
-export function AccountForm(props: AccountFormProps) {
-  const { account, onClose } = props;
+export function AccountForm({ account, onClose, onNotice }: AccountFormProps) {
   const { register, errors, isSubmitting, error, self, submit } =
-    useAccountForm(props);
+    useAccountForm({ account, onClose, onNotice });
 
   return (
     <form className="menu-editor account-form" onSubmit={submit}>
