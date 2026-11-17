@@ -1,5 +1,11 @@
-import { calendarDate } from "@/modules/Settings/schemas";
+import { z } from "zod";
 import type { DateRange } from "@/api/reports";
+import { calendarDate } from "@/schemas/settings";
+
+export const historySearchSchema = z
+  .string()
+  .trim()
+  .max(100, "Search must be 100 characters or fewer.");
 
 export function rangeError(
   from: string,

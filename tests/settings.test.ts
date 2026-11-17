@@ -15,7 +15,7 @@ import {
   calendarDate,
   daySchema,
   timingsSchema,
-} from "../src/modules/Settings/schemas.ts";
+} from "../src/schemas/settings.ts";
 import { can } from "../src/lib/permissions.ts";
 
 const originalFetch = globalThis.fetch;

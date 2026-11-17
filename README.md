@@ -16,17 +16,19 @@ Open `http://localhost:3001`. Add `http://localhost:3001` to the API's `CORS_ORI
 
 The API sends invite links to `/accept-invite#token=…` and reset links to `/reset-password#token=…`. The token stays in the URL fragment (never the query string); accepting an invite does not automatically log the user in. There is no public registration.
 
+Signing out clears local credentials and cached data even if the API cannot be reached. A local sign-out marker prevents the browser from restoring an unrevoked refresh cookie until an explicit login; if server sign-out failed, revoke other sessions when connectivity returns.
+
 Phase 1 includes login, logout, refresh-cookie bootstrap, `/auth/me` identity check, forgot/reset password, invite acceptance, guarded shell, role-aware navigation and Enjoyer design tokens. Frontend navigation is cosmetic: backend permissions are the security boundary.
 
 ## Phase 2: staff operations
 
-- `/board` shows Pending confirmation, Received, Preparing, Ready and Served orders oldest first. The board retrieves all pages for each status; cancelled/rejected orders are excluded from the live board, not the API's history. Served unpaid orders remain flagged.
+- `/board` shows Pending confirmation, Received, Preparing, Ready and Served orders from active table sessions, oldest first. The board retrieves all pages for each status; closed-session and cancelled/rejected orders are excluded from the live board, not the API's history. Served unpaid orders remain flagged.
 - Staff may confirm/reject a first order, move an order forward one step, cancel at any active status with a required reason (max 500 characters), and mark a Served order paid with cash or other. Only Manager/Owner sees the one-step-back action. The API checks all permissions and current states again when each action is submitted.
 - `/tables` shows current-session status, order use/remaining and unpaid PHP total. Opening a tile displays current-session orders, totals and close controls. Staff cannot close an unpaid table; Manager/Owner can explicitly confirm the override. A newly discovered unpaid conflict refreshes totals before another attempt.
 - The board and table overview use the API's bearer-header `src/client/realtime.ts` SSE helper (copied to `src/lib/realtime.ts`), including polling fallback. Incoming new-order IDs compared with the previous board result trigger an in-page visual alert. Sound requires an explicit **Enable sound** gesture because browsers restrict autoplay. Initial sync and reconnect establish baselines, not false new-order alerts.
 - API instants are formatted for `Asia/Manila`; money is displayed as Philippine pesos. No refund flow or online payment control is added.
 
-The staff API currently includes all Served orders in the live list, even after their tables close. The board pages through all of them so it never silently hides later entries; monitor this query volume as order history grows and define an archival policy before changing which orders are shown.
+The board requests `activeSessionOnly=true` on each staff order list; the API's default list remains all sessions for existing consumers. Monitor query volume if individual active sessions grow unusually large.
 
 ## Phase 3: menu operations
 

@@ -884,12 +884,8 @@ a {
   min-height: 38px;
   padding: 8px 14px;
 }
-.weekly-day .hours-form,
 .holiday-row .holiday-confirm {
   width: 100%;
-}
-.hours-form h3 {
-  margin: 0;
 }
 .hours-form .check-item,
 .warning-check {
@@ -1068,10 +1064,6 @@ a {
   gap: 10px;
   margin-top: 24px;
 }
-.account-card .menu-editor {
-  margin-bottom: 0;
-  padding: 16px;
-}
 .account-card .section-heading {
   align-items: start;
 }
@@ -1081,4 +1073,123 @@ a {
 .account-readonly {
   padding: 13px 0;
   overflow-wrap: anywhere;
+}
+
+.modal {
+  width: min(620px, calc(100vw - 32px));
+  max-width: none;
+  max-height: calc(100dvh - 32px);
+  margin: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  overflow: visible;
+}
+.modal-sm {
+  width: min(420px, calc(100vw - 32px));
+}
+.modal-md {
+  width: min(620px, calc(100vw - 32px));
+}
+.modal-lg {
+  width: min(860px, calc(100vw - 32px));
+}
+.modal::backdrop {
+  background: rgb(10 10 10 / 0.55);
+  backdrop-filter: blur(2px);
+}
+.modal-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  max-height: min(85dvh, 840px);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--paper);
+  box-shadow: 0 24px 80px rgb(0 0 0 / 0.25);
+}
+.modal-header {
+  padding: 24px 64px 0 24px;
+}
+.modal-header h2 {
+  margin: 0;
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  letter-spacing: -0.04em;
+}
+.modal-header p {
+  margin: 8px 0 0;
+  color: var(--secondary);
+  line-height: 1.5;
+}
+.modal-body {
+  padding: 20px 24px 24px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: white;
+  color: var(--secondary);
+}
+.modal-close:hover {
+  background: #f3f0e9;
+  color: var(--ink);
+}
+.modal .menu-editor,
+.modal .holiday-editor {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+@media (max-width: 600px) {
+  .modal {
+    width: calc(100vw - 24px);
+  }
+  .modal-panel {
+    max-height: calc(100dvh - 24px);
+  }
+  .modal-header {
+    padding: 20px 56px 0 18px;
+  }
+  .modal-body {
+    padding: 16px 18px 20px;
+  }
+  .modal-close {
+    top: 12px;
+    right: 12px;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .modal-panel {
+    animation: modal-panel-in 160ms ease-out;
+  }
+  .modal[open]::backdrop {
+    animation: modal-backdrop-in 160ms ease-out;
+  }
+}
+@keyframes modal-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+}
+@keyframes modal-backdrop-in {
+  from {
+    opacity: 0;
+  }
 }

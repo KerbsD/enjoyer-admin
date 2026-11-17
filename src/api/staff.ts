@@ -86,6 +86,7 @@ export async function listOrders(
   offset: number,
   paymentStatus?: PaymentStatus,
   signal?: AbortSignal,
+  activeSessionOnly = false,
 ) {
   const query = new URLSearchParams({
     status,
@@ -93,6 +94,7 @@ export async function listOrders(
     limit: "100",
   });
   if (paymentStatus) query.set("paymentStatus", paymentStatus);
+  if (activeSessionOnly) query.set("activeSessionOnly", "true");
   return request<Envelope<Order[]> & { pagination: Pagination }>(
     `/staff/orders?${query}`,
     { signal },
@@ -105,11 +107,18 @@ export async function listAllOrders(
   status: OrderStatus,
   paymentStatus?: PaymentStatus,
   signal?: AbortSignal,
+  activeSessionOnly = false,
 ) {
   const result: Order[] = [];
   let offset = 0;
   do {
-    const page = await listOrders(status, offset, paymentStatus, signal);
+    const page = await listOrders(
+      status,
+      offset,
+      paymentStatus,
+      signal,
+      activeSessionOnly,
+    );
     result.push(...page.data);
     if (!page.pagination.hasMore) return result;
     if (!page.data.length) throw new Error("Order pagination did not advance.");

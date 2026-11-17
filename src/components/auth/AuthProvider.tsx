@@ -9,6 +9,7 @@ import {
 } from "react";
 import { clearSession, currentUser, restoreSession } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-state";
+import { locallySignedOut } from "@/lib/session-restore";
 
 const AuthContext = createContext<{ initializing: boolean }>({
   initializing: true,
@@ -19,9 +20,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
+    const onStorage = () => {
+      if (locallySignedOut()) clearSession();
+    };
+    window.addEventListener("storage", onStorage);
 
     void (async () => {
-      const session = await restoreSession();
+      const session = locallySignedOut() ? null : await restoreSession();
       if (session && mounted) {
         try {
           const { data } = await currentUser();
@@ -44,6 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })();
     return () => {
       mounted = false;
+      window.removeEventListener("storage", onStorage);
     };
   }, []);
 

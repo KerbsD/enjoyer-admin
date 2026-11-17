@@ -8,13 +8,13 @@ import {
   itemSchema,
   money,
   position,
-} from "../src/modules/Menu/schemas.ts";
+} from "../src/schemas/menu.ts";
 import {
   calendarDate,
   daySchema,
   timingsSchema,
-} from "../src/modules/Settings/schemas.ts";
-import { tableSchema } from "../src/modules/Tables/schema.ts";
+} from "../src/schemas/settings.ts";
+import { tableSchema } from "../src/schemas/tables.ts";
 
 const message = (
   schema: {

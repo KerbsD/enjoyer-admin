@@ -3,13 +3,18 @@ import { afterEach, test } from "node:test";
 import {
   clearSession,
   login,
+  logout,
   request,
   restoreSession,
+  setSession,
   ApiError,
 } from "../src/lib/api.ts";
 import { useAuthStore } from "../src/lib/auth-state.ts";
 import { safeNext } from "../src/lib/safe-next.ts";
 import { can } from "../src/lib/permissions.ts";
+import { QueryClient } from "@tanstack/react-query";
+import { bindAuthQueryCache } from "../src/lib/auth-query-cache.ts";
+import { locallySignedOut } from "../src/lib/session-restore.ts";
 
 const realFetch = globalThis.fetch;
 const user = { id: 3, name: "Enjoyer Manager", role: "manager" as const };
@@ -90,4 +95,41 @@ test("navigation follows backend role hierarchy; redirect target stays on-app", 
   ]) {
     assert.equal(safeNext(unsafe), "/board");
   }
+});
+
+test("auth cache is cleared on logout and identity changes, but not token rotation", () => {
+  const client = new QueryClient();
+  const unbind = bindAuthQueryCache(client);
+  try {
+    const manager = { id: 3, name: "Manager", role: "manager" as const };
+    setSession({ accessToken: "one", user: manager });
+    client.setQueryData(["accounts"], ["private"]);
+    setSession({ accessToken: "two", user: manager });
+    assert.deepEqual(client.getQueryData(["accounts"]), ["private"]);
+    clearSession();
+    assert.equal(client.getQueryData(["accounts"]), undefined);
+    client.setQueryData(["accounts"], ["old user"]);
+    setSession({
+      accessToken: "three",
+      user: { id: 4, name: "Other owner", role: "owner" },
+    });
+    assert.equal(client.getQueryData(["accounts"]), undefined);
+  } finally {
+    unbind();
+    client.clear();
+  }
+});
+
+test("failed server logout still clears the local session", async () => {
+  setSession({ accessToken: "access", user });
+  globalThis.fetch = async () => {
+    throw new Error("offline");
+  };
+  await assert.rejects(logout(), /offline/);
+  assert.equal(useAuthStore.getState().accessToken, null);
+  assert.equal(locallySignedOut(), true);
+  assert.equal(await restoreSession(), null);
+  globalThis.fetch = async () => json({ accessToken: "new", user });
+  await login("staff@enjoyer.test", "password");
+  assert.equal(locallySignedOut(), false);
 });

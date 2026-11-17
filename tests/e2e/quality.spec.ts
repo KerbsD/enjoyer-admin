@@ -14,6 +14,44 @@ const account = {
   createdAt: created,
   updatedAt: created,
 };
+const category = {
+  id: 1,
+  name: "Drinks",
+  sortOrder: 0,
+  createdAt: created,
+  updatedAt: created,
+};
+const menuItem = {
+  id: 7,
+  categoryId: category.id,
+  name: "Latte",
+  description: "Espresso and milk",
+  price: "120.00",
+  isSpicy: false,
+  isAvailable: true,
+  isHidden: false,
+  sortOrder: 0,
+  createdAt: created,
+  updatedAt: created,
+};
+const optionGroup = {
+  id: 3,
+  name: "Milk",
+  required: false,
+  minSelections: 0,
+  maxSelections: 1,
+  sortOrder: 0,
+  options: [
+    {
+      id: 9,
+      groupId: 3,
+      name: "Oat",
+      priceDelta: "20.00",
+      isAvailable: true,
+      sortOrder: 0,
+    },
+  ],
+};
 
 async function mockApi(page: Page, role: Role) {
   const user = {
@@ -128,7 +166,35 @@ async function mockApi(page: Page, role: Role) {
           body: '"Order ID","Time (UTC)"\r\n',
           headers: { ...cors, "content-type": "text/csv" },
         });
-      if (path === "/admin/menu-items" || path === "/admin/tables")
+      if (path === "/admin/categories")
+        return route.fulfill({
+          json: {
+            success: true,
+            data: [category],
+            pagination: { limit: 100, offset: 0, total: 1, hasMore: false },
+          },
+          headers: cors,
+        });
+      if (path === "/admin/menu-items/7/option-groups")
+        return route.fulfill({
+          json: { success: true, data: [] },
+          headers: cors,
+        });
+      if (path === "/admin/menu-items")
+        return route.fulfill({
+          json: {
+            success: true,
+            data: [menuItem],
+            pagination: { limit: 100, offset: 0, total: 1, hasMore: false },
+          },
+          headers: cors,
+        });
+      if (path === "/admin/option-groups")
+        return route.fulfill({
+          json: { success: true, data: [optionGroup] },
+          headers: cors,
+        });
+      if (path === "/admin/tables")
         return route.fulfill({
           json: {
             success: true,
@@ -171,6 +237,25 @@ test("private routes redirect signed-out visitors to sign-in", async ({
   await expect(page).toHaveURL(/\/login\?next=%2Faccounts/);
 });
 
+test("failed server sign-out cannot restore the old cookie on reload", async ({
+  page,
+}) => {
+  await mockApi(page, "owner");
+  await page.route("**/auth/logout", (route) =>
+    route.fulfill({ status: 503, json: { message: "Unavailable" } }),
+  );
+  await page.goto("/board");
+  await expect(
+    page.getByRole("heading", { name: /live orders/i }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: /sign out/i }).click();
+  await expect(page).toHaveURL(/\/login$/);
+  await page.reload();
+  await expect(page.getByRole("heading", { name: /sign in/i })).toBeVisible();
+  await page.goto("/board");
+  await expect(page).toHaveURL(/\/login\?next=%2Fboard/);
+});
+
 test("Staff navigation hides management and direct Owner page shows access restriction", async ({
   page,
 }) => {
@@ -196,6 +281,106 @@ test("Manager sees reports but not accounts", async ({ page }) => {
   await expect(nav.getByRole("link", { name: "Reports" })).toBeVisible();
   await expect(nav.getByRole("link", { name: "Accounts" })).toHaveCount(0);
   await expect(page.getByText("No orders in this range.")).toBeVisible();
+});
+
+test("add and edit dialogs are reused across menu, tables and settings", async ({
+  page,
+}) => {
+  await mockApi(page, "owner");
+  await page.goto("/menu");
+  await page
+    .getByRole("navigation", { name: "Menu sections" })
+    .getByRole("button", { name: "Categories" })
+    .click();
+  const addCategory = page.getByRole("button", { name: "Add category" });
+  await addCategory.click();
+  const categoryDialog = page.getByRole("dialog", { name: "New category" });
+  await expect(categoryDialog).toBeVisible();
+  await expect(
+    page.getByRole("textbox", { name: "Category name" }),
+  ).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(categoryDialog).toHaveCount(0);
+  await expect(addCategory).toBeFocused();
+
+  await page.goto("/table-management");
+  const addTable = page.getByRole("button", { name: "Add table" });
+  await addTable.click();
+  const tableDialog = page.getByRole("dialog", { name: "Add physical table" });
+  await expect(tableDialog).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "Table name" })).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(tableDialog).toHaveCount(0);
+  await expect(addTable).toBeFocused();
+
+  await page.goto("/settings");
+  await page.getByRole("button", { name: "Holiday overrides" }).click();
+  const addOverride = page.getByRole("button", { name: "Add date override" });
+  await addOverride.click();
+  const overrideDialog = page.getByRole("dialog", {
+    name: "New date override",
+  });
+  await expect(overrideDialog).toBeVisible();
+  await expect(page.getByLabel("Date (Manila calendar)")).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(overrideDialog).toHaveCount(0);
+  await expect(addOverride).toBeFocused();
+});
+
+test("menu item and option group editors reuse the modal controls", async ({
+  page,
+}) => {
+  await mockApi(page, "owner");
+  await page.goto("/menu");
+
+  const addItem = page.getByRole("button", { name: "Add item" });
+  await addItem.click();
+  const itemDialog = page.getByRole("dialog", { name: "New menu item" });
+  await expect(itemDialog).toBeVisible();
+  await expect(
+    page.getByRole("combobox", { name: "Category", exact: true }),
+  ).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(itemDialog).toHaveCount(0);
+  await expect(addItem).toBeFocused();
+
+  const addOns = page.getByRole("button", { name: "Add-ons" });
+  await addOns.click();
+  const assignmentDialog = page.getByRole("dialog", {
+    name: "Add-ons for Latte",
+  });
+  await expect(assignmentDialog).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(assignmentDialog).toHaveCount(0);
+  await expect(addOns).toBeFocused();
+
+  await page
+    .getByRole("navigation", { name: "Menu sections" })
+    .getByRole("button", { name: "Option groups" })
+    .click();
+  const addGroup = page.getByRole("button", { name: "Add group" });
+  await addGroup.click();
+  const groupDialog = page.getByRole("dialog", { name: "New option group" });
+  await expect(groupDialog).toBeVisible();
+  await expect(
+    page.getByRole("textbox", { name: "Group name", exact: true }),
+  ).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(groupDialog).toHaveCount(0);
+  await expect(addGroup).toBeFocused();
+
+  const addChoice = page.getByRole("button", { name: "Add choice" });
+  await addChoice.click();
+  const choiceDialog = page.getByRole("dialog", {
+    name: "Add a choice to Milk",
+  });
+  await expect(choiceDialog).toBeVisible();
+  await expect(
+    page.getByRole("textbox", { name: "Choice name", exact: true }),
+  ).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(choiceDialog).toHaveCount(0);
+  await expect(addChoice).toBeFocused();
 });
 
 test("Owner account invite shows email failure and mobile navigation works by keyboard", async ({
@@ -229,6 +414,18 @@ test("Owner account invite shows email failure and mobile navigation works by ke
   await expect(menu).toHaveAttribute("aria-expanded", "false");
   await expect(menu).toBeFocused();
   await page.getByRole("button", { name: "Invite team member" }).click();
+  const inviteDialog = page.getByRole("dialog", {
+    name: "Invite a team member",
+  });
+  await expect(inviteDialog).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "Name" })).toBeFocused();
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await page.keyboard.press("Escape");
+  await expect(inviteDialog).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Invite team member" }),
+  ).toBeFocused();
+  await page.getByRole("button", { name: "Invite team member" }).click();
   await page.getByRole("textbox", { name: "Name" }).fill("New staff");
   await page.getByRole("textbox", { name: "Email" }).fill("new@example.com");
   await page.getByRole("button", { name: "Create and email invite" }).click();
@@ -237,6 +434,15 @@ test("Owner account invite shows email failure and mobile navigation works by ke
       .getByRole("status")
       .filter({ hasText: "invite email could not be sent" }),
   ).toBeVisible();
+  const editButton = page
+    .getByRole("button", { name: "Edit name and role" })
+    .first();
+  await editButton.click();
+  const editDialog = page.getByRole("dialog", { name: "Edit Ana" });
+  await expect(editDialog).toBeVisible();
+  await page.getByRole("button", { name: "Cancel" }).click();
+  await expect(editDialog).toHaveCount(0);
+  await expect(editButton).toBeFocused();
 });
 
 test("report custom dates reject incomplete ranges; CSV uses a separate range", async ({

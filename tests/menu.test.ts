@@ -15,7 +15,7 @@ import {
   itemSchema,
   money,
   optionSchema,
-} from "../src/modules/Menu/schemas.ts";
+} from "../src/schemas/menu.ts";
 
 const realFetch = globalThis.fetch;
 const reply = (body: unknown, status = 200) =>

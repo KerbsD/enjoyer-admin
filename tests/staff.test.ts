@@ -54,6 +54,28 @@ test("board loads all oldest-first pages, not just the first 100", async () => {
   assert.equal(orders.at(-1)?.id, "100");
 });
 
+test("live board requests only active sessions on every page", async () => {
+  setSession({
+    accessToken: "staff-token",
+    user: { id: 1, name: "Staff", role: "staff" },
+  });
+  const params: string[] = [];
+  globalThis.fetch = async (url) => {
+    const query = new URL(String(url)).searchParams;
+    params.push(query.get("activeSessionOnly") ?? "");
+    return reply({
+      success: true,
+      data: [{ id: String(params.length) }],
+      pagination: { hasMore: params.length === 1 },
+    });
+  };
+  assert.equal(
+    (await listAllOrders("served", undefined, undefined, true)).length,
+    2,
+  );
+  assert.deepEqual(params, ["true", "true"]);
+});
+
 test("staff mutations send the exact API method and body; conflicting close preserves warning code", async () => {
   setSession({
     accessToken: "staff-token",
@@ -181,4 +203,36 @@ test("staff realtime falls back from unavailable SSE to bearer-authenticated pol
     "/staff/realtime/changes",
   ]);
   assert.deepEqual(changed, ["orders", "tables"]);
+});
+
+test("missing SSE route falls back to polling instead of ending access", async () => {
+  const calls: string[] = [];
+  let ended = false;
+  globalThis.fetch = async (url) => {
+    const path = new URL(String(url)).pathname;
+    calls.push(path);
+    if (path.endsWith("/events")) return reply({ message: "Not found" }, 404);
+    return reply({
+      success: true,
+      data: {
+        revision: "a".repeat(64),
+        resources: { orders: "one" },
+        scope: { kind: "staff" },
+      },
+    });
+  };
+  const watcher = watchRealtime({
+    url: "http://localhost:3000/staff/realtime",
+    headers: () => ({ Authorization: "Bearer staff-token" }),
+    onChange: () => watcher.stop(),
+    onAccessEnded: () => {
+      ended = true;
+    },
+  });
+  await watcher.done;
+  assert.equal(ended, false);
+  assert.deepEqual(calls, [
+    "/staff/realtime/events",
+    "/staff/realtime/changes",
+  ]);
 });

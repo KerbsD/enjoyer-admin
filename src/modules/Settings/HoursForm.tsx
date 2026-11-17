@@ -1,58 +1,28 @@
-"use client";
-
-import { useState, type FormEvent } from "react";
-import { daySchema } from "./schemas";
-import type { HoursInput } from "@/api/settings";
-
-type Initial = {
-  closed: boolean;
-  openTime: string | null;
-  closeTime: string | null;
-};
+import type { HoursFormProps } from "@/types/settings";
+import { useHoursForm } from "./useHoursForm";
 
 export function HoursForm({
   initial,
-  label,
   saving,
   onSave,
   onCancel,
   acknowledge,
-}: {
-  initial?: Initial;
-  label: string;
-  saving: boolean;
-  onSave: (input: HoursInput) => Promise<void>;
-  onCancel: () => void;
-  acknowledge?: string;
-}) {
-  const [closed, setClosed] = useState(initial?.closed ?? true);
-  const [openTime, setOpenTime] = useState(initial?.openTime ?? "");
-  const [closeTime, setCloseTime] = useState(initial?.closeTime ?? "");
-  const [acknowledged, setAcknowledged] = useState(false);
-  const [error, setError] = useState("");
-  const submit = (event: FormEvent) => {
-    event.preventDefault();
-    setError("");
-    if (acknowledge && !acknowledged) {
-      setError("Confirm you understand the effect on unconfigured weekdays.");
-      return;
-    }
-    const parsed = daySchema.safeParse(
-      closed ? { closed: true } : { closed: false, openTime, closeTime },
-    );
-    if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? "Check these hours.");
-      return;
-    }
-    void onSave(parsed.data).catch((cause) =>
-      setError(
-        cause instanceof Error ? cause.message : "Could not save hours.",
-      ),
-    );
-  };
+}: HoursFormProps) {
+  const {
+    closed,
+    setClosed,
+    openTime,
+    setOpenTime,
+    closeTime,
+    setCloseTime,
+    acknowledged,
+    setAcknowledged,
+    error,
+    submit,
+  } = useHoursForm({ initial, onSave, acknowledge });
+
   return (
     <form className="menu-editor hours-form" onSubmit={submit}>
-      <h3>{label}</h3>
       <label className="check-item">
         <input
           type="checkbox"

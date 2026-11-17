@@ -9,7 +9,7 @@ import {
   updateTable,
 } from "../src/api/tables.ts";
 import { can } from "../src/lib/permissions.ts";
-import { tableSchema } from "../src/modules/Tables/schema.ts";
+import { tableSchema } from "../src/schemas/tables.ts";
 
 const realFetch = globalThis.fetch;
 const response = (body: unknown, status = 200) =>
