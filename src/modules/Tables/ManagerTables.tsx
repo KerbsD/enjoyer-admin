@@ -1,9 +1,10 @@
-import Link from "next/link";
-import { Modal } from "@/components/ui/Modal";
 import { TableCard } from "./TableCard";
 import { TableControls } from "./TableControls";
 import { TableForm } from "./TableForm";
 import { useManagerTables } from "./useManagerTables";
+
+import { Modal } from "@/components/ui/Modal";
+import { RealtimeStatus } from "@/components/ui/RealtimeStatus";
 
 export function ManagerTables() {
   const {
@@ -22,22 +23,11 @@ export function ManagerTables() {
     <div>
       <div className="page-head board-heading">
         <div>
-          <span className="eyebrow">ENJOYER / TABLE MANAGEMENT</span>
           <h1>
             Manage tables<span className="brand-dot">.</span>
           </h1>
-          <p>
-            Create physical tables, control order limits and print their QR
-            codes.
-          </p>
         </div>
-        <span className="eyebrow" role="status">
-          {transport === "sse"
-            ? "● Live"
-            : transport === "polling"
-              ? "◌ Polling fallback"
-              : "Connecting…"}
-        </span>
+        <RealtimeStatus transport={transport} />
       </div>
       <TableControls
         filter={filter}
@@ -46,18 +36,6 @@ export function ManagerTables() {
         onDownloadSheet={() => void sheet()}
         sheetPending={sheetPending}
       />
-
-      <p className="table-help">
-        The sheet contains only active tables. Open the downloaded HTML file in
-        a browser and select Print. QR codes point to the API-configured{" "}
-        <code>CUSTOMER_URL</code> (or <code>CLIENT_URL</code> fallback). The
-        customer app is not built yet; configure and verify its{" "}
-        <code>/order</code> page before printing QR codes for service.{" "}
-        <Link className="text-button" href="/tables">
-          View live table sessions →
-        </Link>
-      </p>
-
       <Modal
         open={creating}
         onClose={() => setCreating(false)}

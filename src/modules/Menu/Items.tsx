@@ -19,10 +19,6 @@ export function Items() {
       <div className="section-heading">
         <div>
           <h2>Menu items</h2>
-          <p>
-            Hidden items are not shown to customers; sold-out items stay
-            visible.
-          </p>
         </div>
         <button
           className="button"

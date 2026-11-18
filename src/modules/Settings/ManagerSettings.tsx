@@ -11,11 +11,9 @@ export function ManagerSettings() {
   return (
     <div>
       <div className="page-head">
-        <span className="eyebrow">ENJOYER / SHOP OPERATIONS</span>
         <h1>
           Shop settings<span className="brand-dot">.</span>
         </h1>
-        <p>Control session timing and the shop-local ordering schedule.</p>
       </div>
       <StatusPanel />
       <nav className="menu-tabs" aria-label="Settings sections">

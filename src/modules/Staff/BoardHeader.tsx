@@ -1,5 +1,5 @@
 import type { BoardHeaderProps } from "@/types/staff";
-import { RealtimeStatus } from "./RealtimeStatus";
+import { RealtimeStatus } from "@/components/ui/RealtimeStatus";
 
 export function BoardHeader({
   transport,
@@ -11,11 +11,9 @@ export function BoardHeader({
   return (
     <div className="page-head board-heading">
       <div>
-        <span className="eyebrow">ENJOYER / LIVE SERVICE</span>
         <h1>
           Live orders<span className="brand-dot">.</span>
         </h1>
-        <p>Oldest first. Times shown in Manila.</p>
       </div>
       <div className="board-tools">
         <RealtimeStatus transport={transport} />

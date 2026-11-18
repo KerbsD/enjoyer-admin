@@ -1,4 +1,7 @@
-import { peso, shopTime, statusLabel } from "@/lib/shop-format";
+import { useId } from "react";
+import { ChevronDown } from "lucide-react";
+import { peso, relativeTime, shopClock } from "@/lib/shop-format";
+import { useNow } from "@/lib/use-now";
 import type { OrderCardProps } from "@/types/staff";
 import { OrderActions } from "./OrderActions";
 import { OrderDetails } from "./OrderDetails";
@@ -8,67 +11,96 @@ export function OrderCard({ order: summary }: OrderCardProps) {
   const { expanded, detail, order, toggle } = useOrderCard({
     order: summary,
   });
+  const now = useNow();
+  const detailsId = useId();
+  const awaitingConfirmation = order.status === "pending_confirmation";
+  const hasNote = order.items.some((item) => item.note.trim());
+  const itemLabel = `${order.itemCount} ${order.itemCount === 1 ? "item" : "items"}`;
 
   return (
     <article className="order-card">
-      <div className="card-head">
-        <span className="eyebrow">#{order.orderNumber}</span>
-        <span className={`status-tag status-${order.status}`}>
-          {statusLabel(order.status)}
-        </span>
-      </div>
-      <h3>{order.tableName}</h3>
-      <p className="order-time">
-        {shopTime(order.createdAt)} · {order.itemCount} items
-      </p>
-      <ul className="order-items">
-        {order.items.map((item) => (
-          <li key={item.id}>
-            <strong>
-              {item.quantity} × {item.name}
-            </strong>
-            {item.options.length > 0 && (
-              <small>
-                {item.options
-                  .map((option) => `${option.groupName}: ${option.name}`)
-                  .join(" · ")}
-              </small>
-            )}
-            {item.note && <small className="note">Note: {item.note}</small>}
-          </li>
-        ))}
-      </ul>
-      <div className="card-total">
-        <span>Total</span>
-        <strong>{peso(order.total)}</strong>
-      </div>
-      <div
-        className={`payment-line ${order.paymentStatus === "unpaid" && order.status === "served" ? "unpaid-flag" : ""}`}
-      >
-        {order.paymentStatus === "paid"
-          ? `Paid · ${statusLabel(order.paymentMethod || "")}`
-          : "Unpaid"}
-        {order.status === "served" && order.paymentStatus === "unpaid"
-          ? " · Needs payment"
-          : ""}
-      </div>
       <button
-        className="text-button"
         type="button"
+        className="order-summary"
         onClick={toggle}
         aria-expanded={expanded}
+        aria-controls={detailsId}
       >
-        {expanded ? "Hide details" : "Full order details"}
+        <span className="order-summary-top">
+          <strong className="order-title">
+            #{order.orderNumber} <span>– {order.tableName}</span>
+          </strong>
+          <span className="order-age">
+            {relativeTime(order.createdAt, now)}
+            <ChevronDown size={14} aria-hidden="true" />
+          </span>
+        </span>
+        <span className="order-summary-meta">
+          <span>
+            {awaitingConfirmation ? "First order" : itemLabel}
+            {hasNote ? " – Note" : ""}
+          </span>
+          {awaitingConfirmation ? (
+            <span className="order-placed">
+              Placed: {shopClock(order.createdAt)}
+            </span>
+          ) : (
+            <span
+              className={`pay-badge ${
+                order.paymentStatus === "paid" ? "pay-paid" : "pay-unpaid"
+              }`}
+            >
+              {order.paymentStatus === "paid" ? "Paid" : "Unpaid"}
+            </span>
+          )}
+        </span>
       </button>
       {expanded && (
-        <OrderDetails
-          order={order}
-          pending={detail.isPending}
-          error={detail.error}
-          onRetry={() => void detail.refetch()}
-        />
+        <div className="order-card-details" id={detailsId}>
+          <ul className="order-items">
+            {order.items.map((item) => (
+              <li key={item.id}>
+                <strong>
+                  {item.quantity} × {item.name}
+                </strong>
+                {item.options.length > 0 && (
+                  <small>
+                    {item.options
+                      .map((option) => `${option.groupName}: ${option.name}`)
+                      .join(" · ")}
+                  </small>
+                )}
+                {item.note && <small className="note">Note: {item.note}</small>}
+              </li>
+            ))}
+          </ul>
+          <div className="card-total">
+            <span>Total</span>
+            <strong>{peso(order.total)}</strong>
+          </div>
+          <div
+            className={`payment-line ${
+              order.paymentStatus === "unpaid" && order.status === "served"
+                ? "unpaid-flag"
+                : ""
+            }`}
+          >
+            {order.paymentStatus === "paid"
+              ? `Paid · ${order.paymentMethod === "cash" ? "Cash" : "Other"}`
+              : "Unpaid"}
+            {order.status === "served" && order.paymentStatus === "unpaid"
+              ? " · Needs payment"
+              : ""}
+          </div>
+          <OrderDetails
+            order={order}
+            pending={detail.isPending}
+            error={detail.error}
+            onRetry={() => void detail.refetch()}
+          />
+        </div>
       )}
-      <OrderActions order={order} />
+      <OrderActions order={order} detailed={expanded} />
     </article>
   );
 }

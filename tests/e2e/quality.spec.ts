@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import type { Order } from "../../src/api/staff";
 
 type Role = "staff" | "manager" | "owner";
 const created = "2026-11-13T04:00:00.000Z";
@@ -53,7 +54,58 @@ const optionGroup = {
   ],
 };
 
-async function mockApi(page: Page, role: Role) {
+function boardOrder(
+  id: string,
+  orderNumber: string,
+  tableId: number,
+  status: Order["status"],
+  note = "",
+): Order {
+  const createdAt = "2026-11-17T02:00:00.000Z";
+  return {
+    id,
+    orderNumber,
+    tableId,
+    tableName: `Table ${tableId}`,
+    tableSessionId: `session-${tableId}`,
+    status,
+    subtotal: "240.00",
+    total: "240.00",
+    paymentStatus: "unpaid",
+    paymentMethod: null,
+    paidAt: null,
+    confirmedAt: null,
+    cancellationReason: null,
+    cancelledAt: null,
+    cancelledBy: null,
+    rejectionReason: null,
+    createdAt,
+    updatedAt: createdAt,
+    itemCount: 2,
+    items: [
+      {
+        id: 1,
+        menuItemId: menuItem.id,
+        name: "Latte",
+        unitPrice: "120.00",
+        quantity: 2,
+        note,
+        lineTotal: "240.00",
+        options: [],
+      },
+    ],
+  };
+}
+
+const boardOrders = [
+  boardOrder("order-pending", "1042", 4, "pending_confirmation", "Oat milk"),
+  boardOrder("order-received", "1041", 2, "received"),
+  boardOrder("order-preparing", "1040", 7, "preparing"),
+  boardOrder("order-ready", "1039", 1, "ready"),
+  boardOrder("order-served", "1038", 3, "served"),
+];
+
+async function mockApi(page: Page, role: Role, orders: Order[] = []) {
   const user = {
     id: 1,
     name: "Test User",
@@ -203,7 +255,41 @@ async function mockApi(page: Page, role: Role) {
           },
           headers: cors,
         });
-      if (path === "/staff/orders" || path === "/staff/tables")
+      if (path.startsWith("/staff/orders/") && request.method() === "GET") {
+        const order = orders.find(
+          (candidate) => candidate.id === path.slice("/staff/orders/".length),
+        );
+        return order
+          ? route.fulfill({
+              json: { success: true, data: order },
+              headers: cors,
+            })
+          : route.fulfill({
+              status: 404,
+              json: { message: "Order not found" },
+              headers: cors,
+            });
+      }
+      if (path === "/staff/orders") {
+        const status = url.searchParams.get("status");
+        const data = orders.filter(
+          (order) => !status || order.status === status,
+        );
+        return route.fulfill({
+          json: {
+            success: true,
+            data,
+            pagination: {
+              limit: 100,
+              offset: 0,
+              total: data.length,
+              hasMore: false,
+            },
+          },
+          headers: cors,
+        });
+      }
+      if (path === "/staff/tables")
         return route.fulfill({
           json: {
             success: true,
@@ -281,6 +367,118 @@ test("Manager sees reports but not accounts", async ({ page }) => {
   await expect(nav.getByRole("link", { name: "Reports" })).toBeVisible();
   await expect(nav.getByRole("link", { name: "Accounts" })).toHaveCount(0);
   await expect(page.getByText("No orders in this range.")).toBeVisible();
+});
+
+test("sidebar collapses to icon-only navigation and remembers the preference", async ({
+  page,
+}) => {
+  await mockApi(page, "owner");
+  await page.goto("/board");
+  const nav = page.getByRole("navigation", { name: "Main navigation" });
+  const sidebar = page.locator("#main-nav");
+  const topbar = page.locator(".topbar");
+
+  await sidebar.getByRole("button", { name: "Collapse sidebar" }).click();
+  await expect(
+    topbar.getByRole("button", { name: "Expand sidebar" }),
+  ).toBeVisible();
+  await expect(
+    sidebar.getByRole("button", { name: "Expand sidebar" }),
+  ).toBeVisible();
+  await expect(nav.getByRole("link", { name: "Live orders" })).toBeVisible();
+  await expect(nav.locator(".nav-text").first()).toBeHidden();
+  await expect
+    .poll(async () => (await sidebar.boundingBox())?.width)
+    .toBeLessThan(100);
+
+  await page.reload();
+  await expect(
+    topbar.getByRole("button", { name: "Expand sidebar" }),
+  ).toBeVisible();
+  await expect(
+    sidebar.getByRole("button", { name: "Expand sidebar" }),
+  ).toBeVisible();
+  await expect(nav.getByRole("link", { name: "Live orders" })).toBeVisible();
+
+  await topbar.getByRole("button", { name: "Expand sidebar" }).click();
+  await expect(nav.getByText("Live orders", { exact: true })).toBeVisible();
+});
+
+test("live order board groups work columns, expands cards and opens served orders", async ({
+  page,
+}) => {
+  await mockApi(page, "staff", boardOrders);
+  await page.goto("/board");
+  await expect(
+    page.getByRole("heading", { name: /live orders/i }),
+  ).toBeVisible();
+
+  const columns = page.locator(".board-column");
+  await expect(columns).toHaveCount(4);
+  await expect(page.locator(".column-count")).toHaveText([
+    "· 1",
+    "· 1",
+    "· 1",
+    "· 1",
+  ]);
+
+  const column = (title: string) =>
+    columns.filter({
+      has: page.getByRole("heading", { name: new RegExp(`^${title}`) }),
+    });
+  const pending = column("Pending");
+  const received = column("Received");
+  const preparing = column("Preparing");
+  const ready = column("Ready");
+  await expect(pending.getByText("#1042 – Table 4")).toBeVisible();
+  await expect(pending.getByText(/First order/)).toBeVisible();
+  await expect(pending.getByText(/Placed:/)).toBeVisible();
+  await expect(
+    pending.getByRole("button", { name: "Confirm", exact: true }),
+  ).toBeVisible();
+  await expect(
+    received.getByRole("button", { name: "Start preparing" }),
+  ).toBeVisible();
+  await expect(
+    preparing.getByRole("button", { name: "Mark ready" }),
+  ).toBeVisible();
+  await expect(
+    ready.getByRole("button", { name: "Mark served" }),
+  ).toBeVisible();
+
+  const card = page.locator(".order-card").filter({ hasText: "#1042" });
+  const summary = card.getByRole("button", { name: /#1042/ });
+  await expect(summary).toHaveAttribute("aria-expanded", "false");
+  await summary.click();
+  await expect(summary).toHaveAttribute("aria-expanded", "true");
+  await expect(card.getByText("2 × Latte")).toBeVisible();
+  await expect(card.getByText("Note: Oat milk")).toBeVisible();
+  await expect(card.locator(".card-total")).toContainText("240.00");
+  await expect(
+    card.getByRole("button", { name: "Cancel order" }),
+  ).toBeVisible();
+
+  const servedButton = page.getByRole("button", { name: /Served\s*·\s*1/ });
+  await expect(servedButton).toBeVisible();
+  await servedButton.click();
+  const dialog = page.getByRole("dialog", { name: "Served orders" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText("#1038 – Table 3")).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "Mark paid" })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect
+    .poll(() =>
+      page.evaluate(() => ({
+        width: document.documentElement.scrollWidth,
+        viewport: window.innerWidth,
+      })),
+    )
+    .toEqual({ width: 390, viewport: 390 });
+  await expect(columns).toHaveCount(4);
 });
 
 test("add and edit dialogs are reused across menu, tables and settings", async ({

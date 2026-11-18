@@ -8,21 +8,63 @@ import { useAuthStore } from "@/lib/auth-state";
 import { can, type Permission } from "@/lib/permissions";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import {
+  Armchair,
+  BarChart3,
+  ClipboardList,
+  LogOut,
+  PackageX,
+  PanelLeftClose,
+  PanelLeftOpen,
+  QrCode,
+  Settings,
+  Users,
+  UtensilsCrossed,
+  type LucideIcon,
+} from "lucide-react";
 
-const navigation: { href: string; label: string; permission: Permission }[] = [
-  { href: "/board", label: "Live orders", permission: "board" },
-  { href: "/tables", label: "Tables", permission: "tables" },
+const navigation: {
+  href: string;
+  label: string;
+  permission: Permission;
+  icon: LucideIcon;
+}[] = [
+  {
+    href: "/board",
+    label: "Live orders",
+    permission: "board",
+    icon: ClipboardList,
+  },
+  { href: "/tables", label: "Tables", permission: "tables", icon: Armchair },
   {
     href: "/table-management",
     label: "Manage tables & QR",
     permission: "tableManage",
+    icon: QrCode,
   },
-  { href: "/availability", label: "Sold-out items", permission: "soldOut" },
-  { href: "/menu", label: "Menu", permission: "menu" },
-  { href: "/settings", label: "Shop settings", permission: "settings" },
-  { href: "/reports", label: "Reports", permission: "reports" },
-  { href: "/accounts", label: "Accounts", permission: "accounts" },
+  {
+    href: "/availability",
+    label: "Sold-out items",
+    permission: "soldOut",
+    icon: PackageX,
+  },
+  { href: "/menu", label: "Menu", permission: "menu", icon: UtensilsCrossed },
+  {
+    href: "/settings",
+    label: "Shop settings",
+    permission: "settings",
+    icon: Settings,
+  },
+  {
+    href: "/reports",
+    label: "Reports",
+    permission: "reports",
+    icon: BarChart3,
+  },
+  { href: "/accounts", label: "Accounts", permission: "accounts", icon: Users },
 ];
+
+const SIDEBAR_STORAGE_KEY = "enjoyer:sidebar-collapsed";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const user = useAuthStore((s) => s.user);
@@ -31,8 +73,26 @@ export function AppShell({ children }: { children: ReactNode }) {
   const client = useQueryClient();
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem(SIDEBAR_STORAGE_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
   const menuButton = useRef<HTMLButtonElement>(null);
   const firstLink = useRef<HTMLAnchorElement>(null);
+  const toggleCollapsed = () =>
+    setCollapsed((current) => {
+      const next = !current;
+      try {
+        localStorage.setItem(SIDEBAR_STORAGE_KEY, next ? "1" : "0");
+      } catch {
+        // Collapsing still works for this visit when storage is blocked.
+      }
+      return next;
+    });
+
   useEffect(() => {
     if (!open) return;
     firstLink.current?.focus();
@@ -46,15 +106,25 @@ export function AppShell({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("keydown", escape);
   }, [open]);
   if (!user) return null;
+  const initials = user.name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
+  const collapseLabel = collapsed ? "Expand sidebar" : "Collapse sidebar";
+  const CollapseIcon = collapsed ? PanelLeftOpen : PanelLeftClose;
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${collapsed ? "is-sidebar-collapsed" : ""}`}>
       <a className="skip-link" href="#main-content">
         Skip to main content
       </a>
       <header className="topbar">
-        <Link href="/board" className="brand">
-          ENJOYER<span className="brand-dot">.</span>
-        </Link>
+        <div className="topbar-left">
+          <Link href="/board" className="brand">
+            ENJOYER<span className="brand-dot">.</span>
+          </Link>
+        </div>
         <button
           ref={menuButton}
           type="button"
@@ -79,32 +149,57 @@ export function AppShell({ children }: { children: ReactNode }) {
         />
       )}
       <aside id="main-nav" className={`sidebar ${open ? "sidebar-open" : ""}`}>
-        <div className="eyebrow sidebar-label">
-          WORKSPACE / {user.role.toUpperCase()}
+        <div className="sidebar-head">
+          <div className="eyebrow sidebar-label">WORKSPACE</div>
+          <button
+            type="button"
+            className="sidebar-toggle"
+            onClick={toggleCollapsed}
+            aria-label={collapseLabel}
+            title={collapseLabel}
+          >
+            <CollapseIcon size={18} aria-hidden="true" />
+          </button>
         </div>
         <nav aria-label="Main navigation">
           {navigation
             .filter((item) => can(user.role, item.permission))
-            .map((item, index) => (
-              <Link
-                ref={index === 0 ? firstLink : undefined}
-                key={item.href}
-                href={item.href}
-                onClick={() => setOpen(false)}
-                aria-current={path === item.href ? "page" : undefined}
-                className={`nav-link ${path === item.href ? "nav-active" : ""}`}
-              >
-                {item.label}
-                <span aria-hidden="true">↗</span>
-              </Link>
-            ))}
+            .map((item, index) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  ref={index === 0 ? firstLink : undefined}
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setOpen(false)}
+                  aria-current={path === item.href ? "page" : undefined}
+                  aria-label={item.label}
+                  data-label={item.label}
+                  className={`nav-link ${path === item.href ? "nav-active" : ""}`}
+                >
+                  <Icon size={18} strokeWidth={1.9} aria-hidden="true" />
+                  <span className="nav-text">{item.label}</span>
+                  <span className="nav-arrow" aria-hidden="true">
+                    ↗
+                  </span>
+                </Link>
+              );
+            })}
         </nav>
         <div className="sidebar-footer">
-          <strong>{user.name}</strong>
-          <span className="eyebrow">{user.role}</span>
+          <div className="sidebar-user">
+            <span className="sidebar-avatar" aria-hidden="true">
+              {initials}
+            </span>
+            <div className="sidebar-user-meta">
+              <strong>{user.name}</strong>
+              <span className="eyebrow">{user.role}</span>
+            </div>
+          </div>
           <button
             disabled={busy}
-            className="text-button"
+            className="text-button sidebar-signout"
+            aria-label="Sign out"
             onClick={async () => {
               setBusy(true);
               try {
@@ -120,7 +215,8 @@ export function AppShell({ children }: { children: ReactNode }) {
               }
             }}
           >
-            Sign out →
+            <LogOut size={18} aria-hidden="true" />
+            <span className="sidebar-signout-text">Sign out →</span>
           </button>
         </div>
       </aside>

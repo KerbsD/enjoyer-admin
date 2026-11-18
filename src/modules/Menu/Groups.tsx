@@ -24,10 +24,6 @@ export function Groups() {
       <div className="section-heading">
         <div>
           <h2>Option groups & add-ons</h2>
-          <p>
-            Group changes affect every attached item. Required means minimum
-            selections ≥ 1.
-          </p>
         </div>
         <button className="button" type="button" onClick={openNewGroup}>
           Add group

@@ -12,14 +12,29 @@ export const staffKeys = {
 };
 
 export const boardColumns = [
-  { status: "pending_confirmation", title: "Confirm" },
+  { status: "pending_confirmation", title: "Pending" },
   { status: "received", title: "Received" },
   { status: "preparing", title: "Preparing" },
   { status: "ready", title: "Ready" },
-  { status: "served", title: "Served" },
 ] as const satisfies readonly { status: OrderStatus; title: string }[];
 
 export type BoardColumn = (typeof boardColumns)[number];
+
+// Served orders leave the working columns but remain loaded for the footer
+// summary, where staff can still mark them paid or review them.
+export const boardFetchStatuses = [
+  "pending_confirmation",
+  "received",
+  "preparing",
+  "ready",
+  "served",
+] as const satisfies readonly OrderStatus[];
+
+export const advanceActionLabel: Partial<Record<OrderStatus, string>> = {
+  received: "Start preparing",
+  preparing: "Mark ready",
+  ready: "Mark served",
+};
 
 export const nextOrderStatus: Partial<Record<OrderStatus, OrderStatus>> = {
   received: "preparing",

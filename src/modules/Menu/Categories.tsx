@@ -11,10 +11,6 @@ export function Categories() {
       <div className="section-heading">
         <div>
           <h2>Categories</h2>
-          <p>
-            Change positions to reorder categories. Equal positions use ID
-            order.
-          </p>
         </div>
         <button
           className="button"

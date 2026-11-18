@@ -32,14 +32,9 @@ export function OwnerAccounts() {
   return (
     <div>
       <div className="page-head">
-        <span className="eyebrow">ENJOYER / OWNER</span>
         <h1>
           Accounts<span className="brand-dot">.</span>
         </h1>
-        <p>
-          Manage team access and emailed invitations. Accounts are deactivated,
-          not deleted.
-        </p>
       </div>
       <div className="account-toolbar">
         <button

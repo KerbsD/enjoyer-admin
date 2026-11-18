@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { Order } from "@/api/staff";
 import { listAllOrders } from "@/api/staff";
-import { boardColumns, staffKeys } from "@/constants/staff";
+import { boardFetchStatuses, staffKeys } from "@/constants/staff";
 import { useStaffRealtime } from "./useStaffRealtime";
 
 function playAlert(context: AudioContext) {
@@ -42,7 +42,7 @@ export function useBoard() {
     queryKey: staffKeys.orders,
     queryFn: async ({ signal }) => {
       const pages = await Promise.all(
-        boardColumns.map(({ status }) =>
+        boardFetchStatuses.map((status) =>
           listAllOrders(status, undefined, signal, true),
         ),
       );

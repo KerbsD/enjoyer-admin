@@ -1,51 +1,22 @@
 "use client";
 
-import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
-import { toast } from "sonner";
-import { setAvailability } from "@/api/menu";
 import { peso } from "@/lib/shop-format";
-import { useStaffRealtime } from "@/modules/Staff/useStaffRealtime";
-import { useRefreshMenu, useVisibleMenu } from "./useMenu";
+import { RealtimeStatus } from "@/components/ui/RealtimeStatus";
+
+import { useAvailability } from "./useAvailability";
 
 export default function Availability() {
-  const menu = useVisibleMenu();
-  const refresh = useRefreshMenu();
-  const transport = useStaffRealtime();
-  const [savingId, setSavingId] = useState<number | null>(null);
-  const mutation = useMutation({
-    mutationFn: ({ id, isAvailable }: { id: number; isAvailable: boolean }) =>
-      setAvailability(id, isAvailable),
-    onSuccess: async () => {
-      await refresh();
-      toast.success("Availability updated.");
-    },
-    onError: (error) => {
-      toast.error(error.message);
-      void refresh();
-    },
-    onSettled: () => setSavingId(null),
-  });
+  const { menu, transport, savingId, mutation, setSavingId } = useAvailability();
+
   return (
     <div>
       <div className="page-head board-heading">
         <div>
-          <span className="eyebrow">ENJOYER / DAILY MENU</span>
           <h1>
             Sold-out items<span className="brand-dot">.</span>
           </h1>
-          <p>
-            Available items can be ordered; sold-out items remain visible to
-            customers.
-          </p>
         </div>
-        <span className="eyebrow" role="status">
-          {transport === "sse"
-            ? "● Live"
-            : transport === "polling"
-              ? "◌ Polling fallback"
-              : "Connecting…"}
-        </span>
+        <RealtimeStatus transport={transport} />
       </div>
       {menu.isPending && (
         <p className="feature-note" role="status">

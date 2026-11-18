@@ -1,8 +1,11 @@
-import { menuTabs } from "@/constants/menu";
 import { Categories } from "./Categories";
 import { Groups } from "./Groups";
 import { Items } from "./Items";
 import { useManagerMenu } from "./useManagerMenu";
+
+import { menuTabs } from "@/constants/menu";
+
+import { RealtimeStatus } from "@/components/ui/RealtimeStatus";
 
 export function ManagerMenu() {
   const { tab, setTab, transport } = useManagerMenu();
@@ -11,21 +14,11 @@ export function ManagerMenu() {
     <div>
       <div className="page-head board-heading">
         <div>
-          <span className="eyebrow">ENJOYER / MENU MANAGEMENT</span>
           <h1>
             Menu<span className="brand-dot">.</span>
           </h1>
-          <p>
-            Manage the categories, items and add-ons customers see right now.
-          </p>
         </div>
-        <span className="eyebrow" role="status">
-          {transport === "sse"
-            ? "● Live"
-            : transport === "polling"
-              ? "◌ Polling fallback"
-              : "Connecting…"}
-        </span>
+        <RealtimeStatus transport={transport} />
       </div>
       <nav className="menu-tabs" aria-label="Menu sections">
         {menuTabs.map(({ value, label }) => (

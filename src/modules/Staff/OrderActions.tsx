@@ -1,10 +1,14 @@
 import { statusLabel } from "@/lib/shop-format";
-import { nextOrderStatus, previousOrderStatus } from "@/constants/staff";
+import {
+  advanceActionLabel,
+  nextOrderStatus,
+  previousOrderStatus,
+} from "@/constants/staff";
 import type { OrderActionsProps } from "@/types/staff";
 import { OrderActionPanel } from "./OrderActionPanel";
 import { useOrderActions } from "./useOrderActions";
 
-export function OrderActions({ order }: OrderActionsProps) {
+export function OrderActions({ order, detailed = false }: OrderActionsProps) {
   const {
     canRevert,
     panel,
@@ -18,10 +22,13 @@ export function OrderActions({ order }: OrderActionsProps) {
     submitPanel,
     closePanel,
   } = useOrderActions(order.id);
+  const next = nextOrderStatus[order.status];
+  const previous = previousOrderStatus[order.status];
+  const canCancel = order.status !== "cancelled" && order.status !== "rejected";
 
   return (
     <div className="order-actions">
-      <div className="action-row">
+      <div className="action-row action-row-primary">
         {order.status === "pending_confirmation" && (
           <>
             <button
@@ -29,7 +36,7 @@ export function OrderActions({ order }: OrderActionsProps) {
               disabled={mutation.isPending}
               onClick={() => submit("confirm")}
             >
-              Confirm order
+              Confirm
             </button>
             <button
               className="button button-outline"
@@ -40,22 +47,13 @@ export function OrderActions({ order }: OrderActionsProps) {
             </button>
           </>
         )}
-        {nextOrderStatus[order.status] && (
+        {next && (
           <button
             className="button"
             disabled={mutation.isPending}
             onClick={() => submit("advance")}
           >
-            Move to {statusLabel(nextOrderStatus[order.status]!)}
-          </button>
-        )}
-        {canRevert && previousOrderStatus[order.status] && (
-          <button
-            className="button button-outline"
-            disabled={mutation.isPending}
-            onClick={() => submit("revert")}
-          >
-            Back to {statusLabel(previousOrderStatus[order.status]!)}
+            {advanceActionLabel[order.status] ?? `Move to ${statusLabel(next)}`}
           </button>
         )}
         {order.status === "served" && order.paymentStatus === "unpaid" && (
@@ -67,16 +65,31 @@ export function OrderActions({ order }: OrderActionsProps) {
             Mark paid
           </button>
         )}
-        {order.status !== "cancelled" && order.status !== "rejected" && (
-          <button
-            className="button button-danger"
-            disabled={mutation.isPending}
-            onClick={() => setPanel("cancel")}
-          >
-            Cancel order
-          </button>
-        )}
       </div>
+      {detailed && (canRevert || canCancel) && (
+        <div className="action-row action-row-secondary">
+          {canRevert && previous && (
+            <button
+              type="button"
+              className="text-button order-secondary-link"
+              disabled={mutation.isPending}
+              onClick={() => submit("revert")}
+            >
+              Back to {statusLabel(previous)}
+            </button>
+          )}
+          {canCancel && (
+            <button
+              type="button"
+              className="text-button order-secondary-link danger"
+              disabled={mutation.isPending}
+              onClick={() => setPanel("cancel")}
+            >
+              Cancel order
+            </button>
+          )}
+        </div>
+      )}
       {panel && (
         <OrderActionPanel
           panel={panel}

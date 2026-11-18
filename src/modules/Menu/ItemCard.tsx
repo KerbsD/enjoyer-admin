@@ -49,7 +49,7 @@ export function ItemCard({ item, categories, categoryName }: ItemCardProps) {
             Add-ons
           </button>
           <button
-            className="button button-outline"
+            className={`button ${item.isAvailable ? "button-outline" : ""}`}
             type="button"
             disabled={saving}
             onClick={() => void toggleAvailability()}
@@ -57,7 +57,7 @@ export function ItemCard({ item, categories, categoryName }: ItemCardProps) {
             {saving ? "Saving…" : item.isAvailable ? "Sold out" : "Available"}
           </button>
           <button
-            className="button button-outline"
+            className={`button ${item.isHidden ? "" : "button-outline"}`}
             type="button"
             disabled={saving}
             onClick={() => void toggleHidden()}

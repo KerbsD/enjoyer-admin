@@ -39,6 +39,7 @@ interface OrderDetailsProps {
 
 interface OrderActionsProps {
   order: Order;
+  detailed?: boolean;
 }
 
 interface OrderActionPanelProps {

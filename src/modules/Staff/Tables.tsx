@@ -1,6 +1,6 @@
 "use client";
 
-import { RealtimeStatus } from "./RealtimeStatus";
+import { RealtimeStatus } from "../../components/ui/RealtimeStatus";
 import { TablePanel } from "./TablePanel";
 import { TableTile } from "./TableTile";
 import { useTables } from "./useTables";
@@ -15,11 +15,9 @@ export default function Tables() {
     <div>
       <div className="page-head board-heading">
         <div>
-          <span className="eyebrow">ENJOYER / FLOOR SERVICE</span>
           <h1>
             Tables<span className="brand-dot">.</span>
           </h1>
-          <p>Track sessions, unpaid balances and current orders.</p>
         </div>
         <div className="board-tools">
           <RealtimeStatus transport={transport} />

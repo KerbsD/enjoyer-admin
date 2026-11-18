@@ -11,7 +11,7 @@ import {
   rejectOrder,
 } from "../src/api/staff.ts";
 import { sseMessages, watchRealtime } from "../src/lib/realtime.ts";
-import { peso, shopTime } from "../src/lib/shop-format.ts";
+import { peso, relativeTime, shopTime } from "../src/lib/shop-format.ts";
 
 const originalFetch = globalThis.fetch;
 const reply = (body: unknown, status = 200) =>
@@ -147,6 +147,15 @@ test("table overview uses the staff endpoint and amounts/times use PHP and Manil
   assert.deepEqual((await listTableOverview()).data, []);
   assert.match(peso("260.00"), /260\.00/);
   assert.match(shopTime("2026-11-13T16:30:00.000Z"), /Nov 14, 2026/);
+});
+
+test("order age labels stay compact and clamp future timestamps", () => {
+  const now = new Date("2026-11-17T10:00:00.000Z").getTime();
+  assert.equal(relativeTime("2026-11-17T09:59:40.000Z", now), "Just now");
+  assert.equal(relativeTime("2026-11-17T09:55:00.000Z", now), "5 min");
+  assert.equal(relativeTime("2026-11-17T08:00:00.000Z", now), "2 hr");
+  assert.equal(relativeTime("2026-11-15T10:00:00.000Z", now), "2 d");
+  assert.equal(relativeTime("2026-11-17T10:05:00.000Z", now), "Just now");
 });
 
 test("SSE parser handles split UTF-8 frames and heartbeat comments", async () => {
