@@ -54,6 +54,11 @@ export function OrderCard({ order: summary }: OrderCardProps) {
             </span>
           )}
         </span>
+        {order.customerName && (
+          <span className="wrap-anywhere text-left text-sm font-semibold">
+            For {order.customerName}
+          </span>
+        )}
       </button>
       {expanded && (
         <div className="order-card-details" id={detailsId}>

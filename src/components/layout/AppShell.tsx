@@ -8,6 +8,7 @@ import { useAuthStore } from "@/lib/auth-state";
 import { can, type Permission } from "@/lib/permissions";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useOrderingTerminal } from "@/modules/Settings/useOrderingTerminal";
 import {
   Armchair,
   BarChart3,
@@ -68,6 +69,11 @@ const SIDEBAR_STORAGE_KEY = "enjoyer:sidebar-collapsed";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const user = useAuthStore((s) => s.user);
+  useOrderingTerminal(
+    user && (user.role === "owner" || user.role === "manager")
+      ? user.id
+      : undefined,
+  );
   const path = usePathname();
   const router = useRouter();
   const client = useQueryClient();

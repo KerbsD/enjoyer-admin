@@ -12,6 +12,7 @@ export type PaymentStatus = "unpaid" | "paid";
 export type Order = {
   id: string;
   orderNumber: string;
+  customerName?: string | null;
   tableId: number;
   tableName: string;
   tableSessionId: string;

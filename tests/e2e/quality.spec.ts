@@ -98,7 +98,16 @@ function boardOrder(
 }
 
 const boardOrders = [
-  boardOrder("order-pending", "1042", 4, "pending_confirmation", "Oat milk"),
+  {
+    ...boardOrder(
+      "order-pending",
+      "1042",
+      4,
+      "pending_confirmation",
+      "Oat milk",
+    ),
+    customerName: "Alex",
+  },
   boardOrder("order-received", "1041", 2, "received"),
   boardOrder("order-preparing", "1040", 7, "preparing"),
   boardOrder("order-ready", "1039", 1, "ready"),
@@ -106,6 +115,14 @@ const boardOrders = [
 ];
 
 async function mockApi(page: Page, role: Role, orders: Order[] = []) {
+  let network = {
+    enabled: false,
+    address: null as string | null,
+    detectedAddress: "203.0.113.30",
+    terminalEnrolled: false,
+    thisTerminal: false,
+    updatedAt: null as string | null,
+  };
   const user = {
     id: 1,
     name: "Test User",
@@ -136,6 +153,49 @@ async function mockApi(page: Page, role: Role, orders: Order[] = []) {
       if (path === "/auth/me")
         return route.fulfill({
           json: { success: true, data: user },
+          headers: cors,
+        });
+      if (path === "/admin/ordering-network/sync")
+        return route.fulfill({
+          json: {
+            success: true,
+            data: { enrolled: network.thisTerminal, changed: false },
+          },
+          headers: cors,
+        });
+      if (
+        path === "/admin/ordering-network/terminal" &&
+        request.method() === "POST"
+      ) {
+        expect(request.postDataJSON()).toEqual({
+          expectedAddress: network.detectedAddress,
+        });
+        network = {
+          ...network,
+          enabled: true,
+          address: network.detectedAddress,
+          terminalEnrolled: true,
+          thisTerminal: true,
+          updatedAt: "2026-11-17T02:00:00.000Z",
+        };
+        return route.fulfill({
+          json: { success: true, data: network },
+          headers: cors,
+        });
+      }
+      if (
+        path === "/admin/ordering-network/terminal" &&
+        request.method() === "DELETE"
+      ) {
+        network = { ...network, terminalEnrolled: false, thisTerminal: false };
+        return route.fulfill({
+          json: { success: true, data: network },
+          headers: cors,
+        });
+      }
+      if (path === "/admin/ordering-network")
+        return route.fulfill({
+          json: { success: true, data: network },
           headers: cors,
         });
       if (path === "/staff/realtime/events")
@@ -432,6 +492,7 @@ test("live order board groups work columns, expands cards and opens served order
   const ready = column("Ready");
   await expect(pending.getByText("#1042 – Table 4")).toBeVisible();
   await expect(pending.getByText(/First order/)).toBeVisible();
+  await expect(pending.getByText("For Alex")).toBeVisible();
   await expect(pending.getByText(/Placed:/)).toBeVisible();
   await expect(
     pending.getByRole("button", { name: "Confirm", exact: true }),
@@ -479,6 +540,89 @@ test("live order board groups work columns, expands cards and opens served order
     )
     .toEqual({ width: 390, viewport: 390 });
   await expect(columns).toHaveCount(4);
+});
+
+test("the owner explicitly enrolls and revokes the café terminal", async ({
+  page,
+}) => {
+  await mockApi(page, "owner");
+  await page.goto("/settings");
+  const panel = page.getByRole("region", { name: "Ordering network" });
+  await expect(panel.getByText("Restriction disabled")).toBeVisible();
+  await panel.getByRole("button", { name: "Enroll this terminal" }).click();
+  await expect(panel.getByText(/Approve 203\.0\.113\.30/)).toBeVisible();
+  await expect(panel.getByText("Restriction disabled")).toBeVisible();
+  await panel.getByRole("button", { name: "Confirm change" }).click();
+  await expect(panel.getByText("Restriction enabled")).toBeVisible();
+  await expect(panel.getByText("This browser", { exact: true })).toBeVisible();
+  await panel.getByRole("button", { name: "Revoke terminal" }).click();
+  await panel.getByRole("button", { name: "Confirm change" }).click();
+  await expect(panel.getByText("Off", { exact: true })).toBeVisible();
+  await expect(panel.getByText("Restriction enabled")).toBeVisible();
+});
+
+test("a delayed sync result does not clear a newer terminal enrollment", async ({
+  page,
+}) => {
+  await mockApi(page, "owner");
+  const key = "enjoyer:ordering-terminal";
+  await page.addInitScript(
+    (marker) => localStorage.setItem(marker, "old-enrollment"),
+    key,
+  );
+  let resume!: () => void;
+  const held = new Promise<void>((resolve) => {
+    resume = resolve;
+  });
+  let syncs = 0;
+  await page.route("**/admin/ordering-network/sync", async (route) => {
+    if (route.request().method() === "OPTIONS") return route.fallback();
+    const initial = ++syncs === 1;
+    if (initial) await held;
+    await route.fulfill({
+      headers: {
+        "access-control-allow-origin":
+          process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3102",
+        "access-control-allow-credentials": "true",
+      },
+      json: { success: true, data: { enrolled: !initial, changed: false } },
+    });
+  });
+  try {
+    await page.goto("/settings");
+    await expect.poll(() => syncs).toBe(1);
+    const panel = page.getByRole("region", { name: "Ordering network" });
+    await panel.getByRole("button", { name: "Enroll this terminal" }).click();
+    await panel.getByRole("button", { name: "Confirm change" }).click();
+    await expect(
+      panel.getByText("This browser", { exact: true }),
+    ).toBeVisible();
+    const generation = await page.evaluate(
+      (marker) => localStorage.getItem(marker),
+      key,
+    );
+    expect(generation).toBeTruthy();
+    expect(generation).not.toBe("old-enrollment");
+    const response = page.waitForResponse(
+      (value) =>
+        value.url().endsWith("/admin/ordering-network/sync") &&
+        value.request().method() === "POST",
+    );
+    resume();
+    await response;
+    // A focus-triggered sync after the delayed response proves scheduling survived.
+    await expect
+      .poll(async () => {
+        await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+        return syncs;
+      })
+      .toBeGreaterThan(1);
+    expect(
+      await page.evaluate((marker) => localStorage.getItem(marker), key),
+    ).toBe(generation);
+  } finally {
+    resume();
+  }
 });
 
 test("add and edit dialogs are reused across menu, tables and settings", async ({
