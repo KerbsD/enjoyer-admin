@@ -6,20 +6,11 @@ import { Modal } from "@/components/ui/Modal";
 import { boardColumns } from "@/constants/staff";
 import { BoardColumn } from "./BoardColumn";
 import { BoardHeader } from "./BoardHeader";
-import { NewOrdersBanner } from "./NewOrdersBanner";
 import { OrderCard } from "./OrderCard";
 import { useBoard } from "./useBoard";
 
 export default function Board() {
-  const {
-    sound,
-    arrivals,
-    transport,
-    board,
-    orders,
-    toggleSound,
-    dismissArrivals,
-  } = useBoard();
+  const { sound, transport, board, orders, toggleSound } = useBoard();
   const [servedOpen, setServedOpen] = useState(false);
   const served = orders.filter((order) => order.status === "served");
 
@@ -32,9 +23,6 @@ export default function Board() {
         onToggleSound={toggleSound}
         onRefresh={() => void board.refetch()}
       />
-      {arrivals.length > 0 && (
-        <NewOrdersBanner orders={arrivals} onDismiss={dismissArrivals} />
-      )}
       {board.isPending && (
         <p role="status" className="feature-note">
           Loading live orders…

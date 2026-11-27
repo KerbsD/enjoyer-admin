@@ -467,7 +467,10 @@ test("sidebar collapses to icon-only navigation and remembers the preference", a
 test("live order board groups work columns, expands cards and opens served orders", async ({
   page,
 }) => {
-  await mockApi(page, "staff", boardOrders);
+  await mockApi(page, "staff", [
+    ...boardOrders,
+    { ...boardOrder("order-paid", "1037", 5, "served"), paymentStatus: "paid" },
+  ]);
   await page.goto("/board");
   await expect(
     page.getByRole("heading", { name: /live orders/i }),
@@ -519,13 +522,28 @@ test("live order board groups work columns, expands cards and opens served order
     card.getByRole("button", { name: "Cancel order" }),
   ).toBeVisible();
 
-  const servedButton = page.getByRole("button", { name: /Served\s*·\s*1/ });
+  const servedButton = page.getByRole("button", { name: /Served\s*·\s*2/ });
   await expect(servedButton).toBeVisible();
   await servedButton.click();
   const dialog = page.getByRole("dialog", { name: "Served orders" });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByText("#1038 – Table 3")).toBeVisible();
   await expect(dialog.getByRole("button", { name: "Mark paid" })).toBeVisible();
+
+  const unpaidCard = dialog.locator(".order-card").filter({ hasText: "#1038" });
+  const paidCard = dialog.locator(".order-card").filter({ hasText: "#1037" });
+  const collapsedHeight = await unpaidCard.evaluate(
+    (element: HTMLElement) => element.offsetHeight,
+  );
+  await paidCard.getByRole("button", { name: /#1037/ }).click();
+  await expect(paidCard.getByText("2 × Latte")).toBeVisible();
+  expect(
+    await unpaidCard.evaluate((element: HTMLElement) => element.offsetHeight),
+  ).toBe(collapsedHeight);
+  expect(
+    await unpaidCard.evaluate((element: HTMLElement) => element.offsetTop),
+  ).toBe(await paidCard.evaluate((element: HTMLElement) => element.offsetTop));
+
   await page.keyboard.press("Escape");
   await expect(dialog).toHaveCount(0);
 
@@ -540,6 +558,101 @@ test("live order board groups work columns, expands cards and opens served order
     )
     .toEqual({ width: 390, viewport: 390 });
   await expect(columns).toHaveCount(4);
+});
+
+test("new live orders appear in a dismissible toast", async ({ page }) => {
+  await page.clock.install();
+  const orders = [...boardOrders];
+  await mockApi(page, "staff", orders);
+  await page.route("**/staff/realtime/changes*", async (route) => {
+    if (route.request().method() === "OPTIONS") return route.fallback();
+    const revision = String(orders.length);
+    return route.fulfill({
+      json: {
+        data: {
+          revision,
+          resources: { orders: revision },
+          scope: { kind: "staff" },
+        },
+      },
+      headers: {
+        "access-control-allow-origin":
+          process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3102",
+      },
+    });
+  });
+
+  const initialSync = page.waitForResponse("**/staff/realtime/changes");
+  await page.goto("/board");
+  await initialSync;
+  await expect(page.getByText("#1042 – Table 4")).toBeVisible();
+  const notice = page.locator("[data-sonner-toast]");
+  const waitForNotice = (title: string) =>
+    expect
+      .poll(async () => {
+        await page.clock.runFor(1000);
+        return notice.getByText(title, { exact: true }).count();
+      })
+      .toBe(1);
+  await expect(notice).toHaveCount(0);
+
+  orders.push(boardOrder("order-new", "1043", 6, "received"));
+  await waitForNotice("1 new order");
+  orders.push(boardOrder("order-next", "1044", 8, "received"));
+  await waitForNotice("2 new orders");
+  await expect(notice).toHaveCount(1);
+  await expect(notice).toContainText("#1044 (Table 8), #1043 (Table 6)");
+  await notice.getByRole("button", { name: "Dismiss" }).click();
+  await expect(notice).toHaveCount(0);
+});
+
+test("expanded order details and actions fit the card in tablet landscape", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1024, height: 768 });
+  const [pending] = boardOrders;
+  await mockApi(page, "staff", [
+    {
+      ...pending,
+      orderNumber: "202611260000001",
+      items: [
+        {
+          ...pending.items[0],
+          name: "ExtraLongUnbrokenMenuItemNameForNarrowOrderCards",
+        },
+      ],
+    },
+  ]);
+  await page.goto("/board");
+
+  const card = page.locator(".order-card");
+  await card.getByRole("button", { name: /#202611260000001/ }).click();
+  await card.getByRole("button", { name: "Reject", exact: true }).click();
+  await expect(
+    card.getByRole("textbox", { name: "Reason (optional)" }),
+  ).toBeVisible();
+
+  await expect
+    .poll(() =>
+      card.evaluate((element) => {
+        const bounds = element.getBoundingClientRect();
+        return Array.from(
+          element.querySelectorAll(
+            ".order-title, .order-summary-meta, .order-items li, .card-total, .action-panel, textarea, button",
+          ),
+        )
+          .filter((child) => {
+            const { left, right } = child.getBoundingClientRect();
+            return (
+              left < bounds.left ||
+              right > bounds.right ||
+              child.scrollWidth > child.clientWidth
+            );
+          })
+          .map((child) => child.className || child.tagName);
+      }),
+    )
+    .toEqual([]);
 });
 
 test("the owner explicitly enrolls and revokes the café terminal", async ({

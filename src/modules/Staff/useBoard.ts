@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 import type { Order } from "@/api/staff";
 import { listAllOrders } from "@/api/staff";
 import { boardFetchStatuses, staffKeys } from "@/constants/staff";
@@ -22,18 +23,40 @@ function playAlert(context: AudioContext) {
 
 export function useBoard() {
   const [sound, setSound] = useState(false);
-  const [arrivals, setArrivals] = useState<Order[]>([]);
+  const arrivalNotice = useRef<{ id: string | number; orders: Order[] } | null>(
+    null,
+  );
   const audio = useRef<AudioContext | null>(null);
 
   useEffect(
     () => () => {
+      const notice = arrivalNotice.current;
+      arrivalNotice.current = null;
+      if (notice) toast.dismiss(notice.id);
       void audio.current?.close();
     },
     [],
   );
 
   const onNewOrders = useCallback((added: Order[]) => {
-    setArrivals((current) => [...added, ...current].slice(0, 10));
+    const previous = arrivalNotice.current;
+    const orders = [...added, ...(previous?.orders ?? [])].slice(0, 10);
+    const clearNotice = () => {
+      if (arrivalNotice.current?.id === id) arrivalNotice.current = null;
+    };
+    const id = toast(
+      `${orders.length} new ${orders.length === 1 ? "order" : "orders"}`,
+      {
+        id: previous?.id,
+        description: orders
+          .map((order) => `#${order.orderNumber} (${order.tableName})`)
+          .join(", "),
+        duration: Infinity,
+        cancel: { label: "Dismiss", onClick: clearNotice },
+        onDismiss: clearNotice,
+      },
+    );
+    arrivalNotice.current = { id, orders };
     if (audio.current) playAlert(audio.current);
   }, []);
 
@@ -63,15 +86,11 @@ export function useBoard() {
     }
   };
 
-  const dismissArrivals = () => setArrivals([]);
-
   return {
     sound,
-    arrivals,
     transport,
     board,
     orders,
     toggleSound,
-    dismissArrivals,
   };
 }

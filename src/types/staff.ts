@@ -16,11 +16,6 @@ interface BoardHeaderProps {
   onRefresh: () => void;
 }
 
-interface NewOrdersBannerProps {
-  orders: Order[];
-  onDismiss: () => void;
-}
-
 interface BoardColumnProps {
   column: BoardColumn;
   orders: Order[];
@@ -84,7 +79,6 @@ interface TableClosePanelProps {
 export type {
   BoardColumnProps,
   BoardHeaderProps,
-  NewOrdersBannerProps,
   OrderAction,
   OrderActionPanelKind,
   OrderActionPanelProps,

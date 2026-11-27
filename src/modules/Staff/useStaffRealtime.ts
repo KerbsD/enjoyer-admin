@@ -15,6 +15,7 @@ export function useStaffRealtime(onNewOrders?: (orders: Order[]) => void) {
   const [transport, setTransport] = useState<StaffTransport>("connecting");
   useEffect(() => {
     if (!token) return;
+    let active = true;
     const watcher = watchRealtime({
       url: `${API_URL}/staff/realtime`,
       headers: () => ({ Authorization: `Bearer ${token}` }),
@@ -48,7 +49,7 @@ export function useStaffRealtime(onNewOrders?: (orders: Order[]) => void) {
               : []),
           ]);
           const after = client.getQueryData<Order[]>(staffKeys.orders);
-          if (!sync && before && after && onNewOrders) {
+          if (active && !sync && before && after && onNewOrders) {
             const known = new Set(before.map((order) => order.id));
             const added = after.filter(
               (order) =>
@@ -87,7 +88,10 @@ export function useStaffRealtime(onNewOrders?: (orders: Order[]) => void) {
         else clearSession();
       },
     });
-    return () => watcher.stop();
+    return () => {
+      active = false;
+      watcher.stop();
+    };
   }, [token, client, onNewOrders]);
   return transport;
 }
