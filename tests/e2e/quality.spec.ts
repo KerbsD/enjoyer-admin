@@ -419,7 +419,9 @@ test("Staff navigation hides management and direct Owner page shows access restr
   ).toBeVisible();
 });
 
-test("Manager sees reports but not accounts", async ({ page }) => {
+test("Manager sees reports but not accounts or ordering network", async ({
+  page,
+}) => {
   await mockApi(page, "manager");
   await page.goto("/reports");
   await expect(page.getByRole("heading", { name: "Reports." })).toBeVisible();
@@ -427,6 +429,13 @@ test("Manager sees reports but not accounts", async ({ page }) => {
   await expect(nav.getByRole("link", { name: "Reports" })).toBeVisible();
   await expect(nav.getByRole("link", { name: "Accounts" })).toHaveCount(0);
   await expect(page.getByText("No orders in this range.")).toBeVisible();
+  await page.goto("/settings");
+  await expect(
+    page.getByRole("button", { name: "Holiday overrides" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Ordering network" }),
+  ).toHaveCount(0);
 });
 
 test("sidebar collapses to icon-only navigation and remembers the preference", async ({
@@ -467,8 +476,27 @@ test("sidebar collapses to icon-only navigation and remembers the preference", a
 test("live order board groups work columns, expands cards and opens served orders", async ({
   page,
 }) => {
+  const [pendingOrder, ...otherOrders] = boardOrders;
   await mockApi(page, "staff", [
-    ...boardOrders,
+    {
+      ...pendingOrder,
+      items: [
+        ...pendingOrder.items,
+        ...["Tea", "Espresso", "Cookie", "Brownie"].map((name, index) => ({
+          ...pendingOrder.items[0],
+          id: index + 2,
+          name,
+          quantity: 1,
+          note: "",
+          unitPrice: "30.00",
+          lineTotal: "30.00",
+        })),
+      ],
+      itemCount: 6,
+      subtotal: "360.00",
+      total: "360.00",
+    },
+    ...otherOrders,
     { ...boardOrder("order-paid", "1037", 5, "served"), paymentStatus: "paid" },
   ]);
   await page.goto("/board");
@@ -512,12 +540,23 @@ test("live order board groups work columns, expands cards and opens served order
 
   const card = page.locator(".order-card").filter({ hasText: "#1042" });
   const summary = card.getByRole("button", { name: /#1042/ });
+  const preview = card.locator(".order-item-preview");
   await expect(summary).toHaveAttribute("aria-expanded", "false");
+  await expect(preview.getByRole("listitem")).toHaveText([
+    "2 × Latte",
+    "1 × Tea",
+    "1 × Espresso",
+    "1 × Cookie",
+  ]);
+  await expect(preview.getByText("+1 more", { exact: true })).toBeVisible();
+  await expect(card.getByText("1 × Brownie")).toHaveCount(0);
   await summary.click();
   await expect(summary).toHaveAttribute("aria-expanded", "true");
+  await expect(preview).toHaveCount(0);
+  await expect(card.getByText("1 × Brownie")).toBeVisible();
   await expect(card.getByText("2 × Latte")).toBeVisible();
   await expect(card.getByText("Note: Oat milk")).toBeVisible();
-  await expect(card.locator(".card-total")).toContainText("240.00");
+  await expect(card.locator(".card-total")).toContainText("360.00");
   await expect(
     card.getByRole("button", { name: "Cancel order" }),
   ).toBeVisible();
@@ -558,6 +597,76 @@ test("live order board groups work columns, expands cards and opens served order
     )
     .toEqual({ width: 390, viewport: 390 });
   await expect(columns).toHaveCount(4);
+});
+
+test("order cancellation and payment open in modals", async ({ page }) => {
+  const orders = [...boardOrders];
+  await mockApi(page, "staff", orders);
+  await page.route("**/staff/orders/*/{cancel,paid}", async (route) => {
+    const request = route.request();
+    if (request.method() === "OPTIONS") return route.fallback();
+    const [id, action] = new URL(request.url()).pathname.split("/").slice(-2);
+    const index = orders.findIndex((order) => order.id === id);
+    const order = orders[index];
+    if (action === "cancel") {
+      expect(request.postDataJSON()).toEqual({ reason: "Guest changed plans" });
+      orders[index] = { ...order, status: "cancelled" };
+    } else {
+      expect(request.postDataJSON()).toEqual({ method: "other" });
+      orders[index] = {
+        ...order,
+        paymentStatus: "paid",
+        paymentMethod: "other",
+      };
+    }
+    return route.fulfill({
+      json: { success: true, data: orders[index] },
+      headers: {
+        "access-control-allow-credentials": "true",
+        "access-control-allow-origin":
+          process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3102",
+      },
+    });
+  });
+
+  await page.goto("/board");
+  await page.getByRole("button", { name: /#1042/ }).click();
+  await page.getByRole("button", { name: "Cancel order" }).click();
+  const cancellation = page.getByRole("dialog", { name: "Cancel order" });
+  const confirm = cancellation.getByRole("button", {
+    name: "Confirm cancellation",
+  });
+  await expect(confirm).toBeDisabled();
+  await cancellation
+    .getByRole("textbox", { name: "Reason (required)" })
+    .fill("Guest changed plans");
+  await confirm.click();
+  await expect(cancellation).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /#1042/ })).toHaveCount(0);
+
+  await page.getByRole("button", { name: /Served\s*·\s*1/ }).click();
+  const served = page.getByRole("dialog", { name: "Served orders" });
+  const markPaid = served.getByRole("button", { name: "Mark paid" });
+  const payment = page.getByRole("dialog", { name: "Record payment" });
+  await markPaid.click();
+  await expect(payment.getByLabel("Payment method")).toHaveValue("cash");
+  await page.keyboard.press("Escape");
+  await expect(payment).toHaveCount(0);
+  await expect(served).toBeVisible();
+  await expect(markPaid).toBeFocused();
+  await markPaid.click();
+  await payment.getByLabel("Payment method").selectOption("other");
+  await payment.getByRole("button", { name: "Record payment" }).click();
+  await expect(payment).toHaveCount(0);
+  await expect(markPaid).toHaveCount(0);
+  await expect(served).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(served).toHaveCount(0);
+  expect(
+    await page
+      .locator("body")
+      .evaluate((element: HTMLElement) => element.style.overflow),
+  ).toBe("");
 });
 
 test("new live orders appear in a dismissible toast", async ({ page }) => {
@@ -653,6 +762,17 @@ test("expanded order details and actions fit the card in tablet landscape", asyn
       }),
     )
     .toEqual([]);
+
+  const orderList = page.locator(".column-list").filter({ has: card });
+  await expect(orderList).toHaveCSS("scrollbar-width", "none");
+  await orderList.evaluate((element) => {
+    element.scrollTop = 0;
+  });
+  await orderList.hover({ position: { x: 8, y: 8 } });
+  await page.mouse.wheel(0, 160);
+  await expect
+    .poll(() => orderList.evaluate((element) => element.scrollTop))
+    .toBeGreaterThan(0);
 });
 
 test("the owner explicitly enrolls and revokes the café terminal", async ({
@@ -661,6 +781,15 @@ test("the owner explicitly enrolls and revokes the café terminal", async ({
   await mockApi(page, "owner");
   await page.goto("/settings");
   const panel = page.getByRole("region", { name: "Ordering network" });
+  const sections = page.getByRole("navigation", { name: "Settings sections" });
+  await expect(sections.getByRole("button")).toHaveText([
+    "Session timing",
+    "Weekly hours",
+    "Holiday overrides",
+    "Ordering network",
+  ]);
+  await expect(panel).toHaveCount(0);
+  await sections.getByRole("button", { name: "Ordering network" }).click();
   await expect(panel.getByText("Restriction disabled")).toBeVisible();
   await panel.getByRole("button", { name: "Enroll this terminal" }).click();
   await expect(panel.getByText(/Approve 203\.0\.113\.30/)).toBeVisible();
@@ -704,6 +833,7 @@ test("a delayed sync result does not clear a newer terminal enrollment", async (
   try {
     await page.goto("/settings");
     await expect.poll(() => syncs).toBe(1);
+    await page.getByRole("button", { name: "Ordering network" }).click();
     const panel = page.getByRole("region", { name: "Ordering network" });
     await panel.getByRole("button", { name: "Enroll this terminal" }).click();
     await panel.getByRole("button", { name: "Confirm change" }).click();
@@ -905,17 +1035,41 @@ test("report custom dates reject incomplete ranges; CSV uses a separate range", 
 }) => {
   await mockApi(page, "owner");
   await page.goto("/reports");
+  const sections = page.getByRole("navigation", { name: "Report sections" });
+  await expect(
+    sections.getByRole("button", { name: "Dashboard" }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await expect(
+    page.getByRole("heading", { name: "Order history" }),
+  ).toHaveCount(0);
   await page.getByRole("combobox", { name: "Period" }).selectOption("custom");
   await page.getByRole("button", { name: "Show dashboard" }).click();
   await expect(page.getByText("Select both dates.")).toBeVisible();
+  await sections.getByRole("button", { name: "Order history" }).click();
+  await expect(page.getByRole("heading", { name: "Dashboard" })).toHaveCount(0);
+  await page
+    .getByRole("combobox", { name: "Status" })
+    .selectOption("cancelled");
+  const historyRequest = page.waitForRequest((req) => {
+    const url = new URL(req.url());
+    return (
+      req.method() === "GET" &&
+      url.pathname === "/admin/orders" &&
+      url.searchParams.get("status") === "cancelled"
+    );
+  });
+  await page.getByRole("button", { name: "Apply filters" }).click();
+  expect(new URL((await historyRequest).url()).searchParams.get("limit")).toBe(
+    "12",
+  );
+  await sections.getByRole("button", { name: "Export CSV" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Order history" }),
+  ).toHaveCount(0);
   const exportSection = page
     .getByRole("heading", { name: /Export orders/i })
     .locator("..");
   await expect(exportSection).toBeVisible();
-  await page
-    .getByRole("combobox", { name: "Status" })
-    .selectOption("cancelled");
-  await page.getByRole("button", { name: "Apply filters" }).click();
   await exportSection.getByLabel("From (Manila date)").fill("2026-11-01");
   await exportSection.getByLabel("To (Manila date)").fill("2026-11-13");
   const request = page.waitForRequest((req) =>
@@ -934,4 +1088,8 @@ test("report custom dates reject incomplete ranges; CSV uses a separate range", 
   });
   const results = await new AxeBuilder({ page }).analyze();
   expect(results.violations).toEqual([]);
+  await sections.getByRole("button", { name: "Order history" }).click();
+  await expect(page.getByRole("combobox", { name: "Status" })).toHaveValue(
+    "cancelled",
+  );
 });

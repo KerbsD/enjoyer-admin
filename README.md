@@ -56,7 +56,7 @@ All prices remain exact decimal strings (no rounding) until displayed as Philipp
 ## Phase 6: dashboard, history and CSV export
 
 - `/reports` is Manager/Owner-only. The dashboard offers today, rolling seven or 30 shop dates, or a custom paired `YYYY-MM-DD` range. It displays PHP paid revenue, order counts, status breakdown, best sellers, and Manila-hour demand. Revenue includes paid cancelled orders; best sellers and peak hours exclude cancelled and rejected orders. Empty results are labelled.
-- Order history supports optional paired Manila-date range, table, item, status, payment, and text search (order number, table name, or snapshotted item name). Apply/clear filters resets pagination; results load 25 at a time, with full snapshotted order details on demand. All statuses are included by default.
+- Order history supports optional paired Manila-date range, table, item, status, payment, and text search (order number, table name, or snapshotted item name). Apply/clear filters resets pagination; results load 12 at a time, newest first, with full snapshotted order details on demand. All statuses are included by default.
 - CSV download has its **own required date range**; history filters never affect it. It includes all orders in the selected inclusive shop-date range. The API CSV's `Time (UTC)` column is UTC, while timestamps shown on the page are formatted in Manila time. Downloads use bearer-authenticated attachment requests and never put credentials in the URL.
 - Order changes invalidate report data through the existing staff realtime connection. Browser verification with a running API and Manager/Owner credentials remains to be done.
 

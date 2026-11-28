@@ -68,6 +68,11 @@ export function useOrderActions(orderId: string) {
 
   const canRevert = !!role && role !== "staff";
 
+  const openPanel = (kind: OrderActionPanelKind) => {
+    mutation.reset();
+    setPanel(kind);
+  };
+
   const submit = (action: OrderAction) =>
     mutation.mutate({ action, reason: reason.trim(), method });
 
@@ -86,7 +91,7 @@ export function useOrderActions(orderId: string) {
   return {
     canRevert,
     panel,
-    setPanel,
+    openPanel,
     reason,
     setReason,
     method,

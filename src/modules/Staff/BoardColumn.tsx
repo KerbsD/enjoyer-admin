@@ -12,7 +12,9 @@ export function BoardColumn({ column, orders }: BoardColumnProps) {
       </div>
       <div className="column-list">
         {orders.length ? (
-          orders.map((order) => <OrderCard order={order} key={order.id} />)
+          orders.map((order) => (
+            <OrderCard order={order} key={order.id} showItemPreview />
+          ))
         ) : (
           <div className="empty-column">No orders here.</div>
         )}

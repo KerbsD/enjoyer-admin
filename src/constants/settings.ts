@@ -11,6 +11,7 @@ export const settingsTabs = [
   { value: "timings", label: "Session timing" },
   { value: "weekly", label: "Weekly hours" },
   { value: "holidays", label: "Holiday overrides" },
+  { value: "ordering-network", label: "Ordering network" },
 ] as const;
 
 export type SettingsTab = (typeof settingsTabs)[number]["value"];

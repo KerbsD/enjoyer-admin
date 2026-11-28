@@ -23,6 +23,7 @@ interface BoardColumnProps {
 
 interface OrderCardProps {
   order: Order;
+  showItemPreview?: boolean;
 }
 
 interface OrderDetailsProps {
@@ -39,9 +40,11 @@ interface OrderActionsProps {
 
 interface OrderActionPanelProps {
   panel: OrderActionPanelKind;
+  orderNumber: string;
   reason: string;
   method: PaymentMethod;
   pending: boolean;
+  error?: string;
   onReasonChange: (value: string) => void;
   onMethodChange: (value: PaymentMethod) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;

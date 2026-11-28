@@ -1,12 +1,20 @@
 import { settingsTabs } from "@/constants/settings";
 import { Holidays } from "./Holidays";
+import { OrderingNetworkPanel } from "./OrderingNetworkPanel";
 import { StatusPanel } from "./StatusPanel";
 import { TimingsForm } from "./TimingsForm";
 import { useManagerSettings } from "./useManagerSettings";
 import { WeeklyHours } from "./WeeklyHours";
 
-export function ManagerSettings() {
+export function ManagerSettings({
+  canManageOrderingNetwork,
+}: {
+  canManageOrderingNetwork: boolean;
+}) {
   const { tab, setTab, settings } = useManagerSettings();
+  const tabs = canManageOrderingNetwork
+    ? settingsTabs
+    : settingsTabs.filter(({ value }) => value !== "ordering-network");
 
   return (
     <div>
@@ -17,7 +25,7 @@ export function ManagerSettings() {
       </div>
       <StatusPanel />
       <nav className="menu-tabs" aria-label="Settings sections">
-        {settingsTabs.map(({ value, label }) => (
+        {tabs.map(({ value, label }) => (
           <button
             key={value}
             type="button"
@@ -54,6 +62,9 @@ export function ManagerSettings() {
       )}
       {tab === "weekly" && <WeeklyHours />}
       {tab === "holidays" && <Holidays />}
+      {canManageOrderingNetwork && tab === "ordering-network" && (
+        <OrderingNetworkPanel />
+      )}
     </div>
   );
 }

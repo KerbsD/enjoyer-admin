@@ -13,7 +13,7 @@ export const reportStatuses: OrderStatus[] = [
   "rejected",
 ];
 
-export const historyPageSize = 25;
+export const historyPageSize = 12;
 
 export const reportKeys = {
   dashboard: (params: DashboardParams) =>

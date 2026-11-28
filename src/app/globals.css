@@ -21,15 +21,15 @@ html {
 }
 @supports selector(::-webkit-scrollbar) {
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 4px;
+    height: 4px;
   }
   ::-webkit-scrollbar-button {
     display: none;
   }
   ::-webkit-scrollbar-thumb {
     background: var(--scrollbar-thumb);
-    border-radius: 999px;
+    border-radius: 0;
   }
   ::-webkit-scrollbar-track,
   ::-webkit-scrollbar-corner {
@@ -627,7 +627,11 @@ a {
   gap: 10px;
   min-height: 0;
   overflow-y: auto;
+  scrollbar-width: none;
   padding: 0 2px 2px 0;
+}
+.column-list::-webkit-scrollbar {
+  display: none;
 }
 .empty-column {
   padding: 28px 8px;
@@ -737,6 +741,14 @@ a {
   border: 0;
   gap: 9px;
   font-size: 0.8rem;
+}
+.order-item-preview .order-items {
+  gap: 4px;
+}
+.order-item-preview-more {
+  margin: 4px 0 0;
+  color: var(--secondary);
+  font-size: 0.72rem;
 }
 .order-card .card-total {
   margin: 0;
