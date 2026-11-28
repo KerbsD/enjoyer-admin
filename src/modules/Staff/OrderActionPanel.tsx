@@ -1,17 +1,23 @@
+import { Modal } from "@/components/ui/Modal";
 import type { OrderActionPanelProps, PaymentMethod } from "@/types/staff";
 
 export function OrderActionPanel({
   panel,
+  orderNumber,
   reason,
   method,
   pending,
+  error,
   onReasonChange,
   onMethodChange,
   onSubmit,
   onClose,
 }: OrderActionPanelProps) {
-  return (
-    <form className="action-panel" onSubmit={onSubmit}>
+  const form = (
+    <form
+      className={panel === "reject" ? "action-panel" : undefined}
+      onSubmit={onSubmit}
+    >
       {panel === "paid" ? (
         <label className="field">
           <span className="eyebrow">Payment method</span>
@@ -39,9 +45,14 @@ export function OrderActionPanel({
           />
         </label>
       )}
+      {panel !== "reject" && error && (
+        <p className="feature-note error" role="alert">
+          {error}
+        </p>
+      )}
       <div className="action-row">
         <button
-          className="button"
+          className={panel === "cancel" ? "button button-danger" : "button"}
           disabled={pending || (panel === "cancel" && !reason.trim())}
           type="submit"
         >
@@ -58,9 +69,23 @@ export function OrderActionPanel({
           className="button button-outline"
           onClick={onClose}
         >
-          Keep order
+          {panel === "paid" ? "Back" : "Keep order"}
         </button>
       </div>
     </form>
+  );
+
+  if (panel === "reject") return form;
+
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title={panel === "paid" ? "Record payment" : "Cancel order"}
+      description={`Order #${orderNumber}`}
+      size="sm"
+    >
+      {form}
+    </Modal>
   );
 }

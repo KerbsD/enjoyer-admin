@@ -26,6 +26,8 @@ interface ModalProps {
 const subscribe = () => () => {};
 const getSnapshot = () => true;
 const getServerSnapshot = () => false;
+let openModalCount = 0;
+let previousBodyOverflow = "";
 
 export function Modal({ open, ...props }: ModalProps) {
   const mounted = useSyncExternalStore(
@@ -68,10 +70,16 @@ function ModalDialog({
   }, []);
 
   useEffect(() => {
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    if (openModalCount === 0) {
+      previousBodyOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+    }
+    openModalCount += 1;
     return () => {
-      document.body.style.overflow = previous;
+      openModalCount -= 1;
+      if (openModalCount === 0) {
+        document.body.style.overflow = previousBodyOverflow;
+      }
     };
   }, []);
 
@@ -83,6 +91,7 @@ function ModalDialog({
       aria-describedby={description ? descriptionId : undefined}
       onCancel={(event) => {
         event.preventDefault();
+        event.stopPropagation();
         if (closeOnEscape) onClose();
       }}
       onClick={(event) => {

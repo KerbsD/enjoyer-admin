@@ -7,7 +7,9 @@ import { OrderActions } from "./OrderActions";
 import { OrderDetails } from "./OrderDetails";
 import { useOrderCard } from "./useOrderCard";
 
-export function OrderCard({ order: summary }: OrderCardProps) {
+const itemPreviewLimit = 4;
+
+export function OrderCard({ order: summary, showItemPreview }: OrderCardProps) {
   const { expanded, detail, order, toggle } = useOrderCard({
     order: summary,
   });
@@ -16,6 +18,7 @@ export function OrderCard({ order: summary }: OrderCardProps) {
   const awaitingConfirmation = order.status === "pending_confirmation";
   const hasNote = order.items.some((item) => item.note.trim());
   const itemLabel = `${order.itemCount} ${order.itemCount === 1 ? "item" : "items"}`;
+  const remainingItems = order.items.length - itemPreviewLimit;
 
   return (
     <article className="order-card">
@@ -60,6 +63,20 @@ export function OrderCard({ order: summary }: OrderCardProps) {
           </span>
         )}
       </button>
+      {showItemPreview && !expanded && order.items.length > 0 && (
+        <div className="order-item-preview">
+          <ul className="order-items">
+            {order.items.slice(0, itemPreviewLimit).map((item) => (
+              <li key={item.id}>
+                {item.quantity} × {item.name}
+              </li>
+            ))}
+          </ul>
+          {remainingItems > 0 && (
+            <p className="order-item-preview-more">+{remainingItems} more</p>
+          )}
+        </div>
+      )}
       {expanded && (
         <div className="order-card-details" id={detailsId}>
           <ul className="order-items">

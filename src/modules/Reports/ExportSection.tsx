@@ -10,7 +10,7 @@ export function ExportSection() {
       <h2>Export orders · CSV</h2>
       <p>
         Choose an inclusive Manila date range. Export includes every order in
-        that range, regardless of the history filters above. The CSV timestamps
+        that range, regardless of the Order history filters. The CSV timestamps
         are UTC.
       </p>
       <form onSubmit={(e) => void download(e)} className="report-controls">

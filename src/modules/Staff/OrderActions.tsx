@@ -12,7 +12,7 @@ export function OrderActions({ order, detailed = false }: OrderActionsProps) {
   const {
     canRevert,
     panel,
-    setPanel,
+    openPanel,
     reason,
     setReason,
     method,
@@ -41,7 +41,7 @@ export function OrderActions({ order, detailed = false }: OrderActionsProps) {
             <button
               className="button button-outline"
               disabled={mutation.isPending}
-              onClick={() => setPanel("reject")}
+              onClick={() => openPanel("reject")}
             >
               Reject
             </button>
@@ -59,8 +59,9 @@ export function OrderActions({ order, detailed = false }: OrderActionsProps) {
         {order.status === "served" && order.paymentStatus === "unpaid" && (
           <button
             className="button"
+            aria-haspopup="dialog"
             disabled={mutation.isPending}
-            onClick={() => setPanel("paid")}
+            onClick={() => openPanel("paid")}
           >
             Mark paid
           </button>
@@ -82,8 +83,9 @@ export function OrderActions({ order, detailed = false }: OrderActionsProps) {
             <button
               type="button"
               className="text-button order-secondary-link danger"
+              aria-haspopup="dialog"
               disabled={mutation.isPending}
-              onClick={() => setPanel("cancel")}
+              onClick={() => openPanel("cancel")}
             >
               Cancel order
             </button>
@@ -93,9 +95,11 @@ export function OrderActions({ order, detailed = false }: OrderActionsProps) {
       {panel && (
         <OrderActionPanel
           panel={panel}
+          orderNumber={order.orderNumber}
           reason={reason}
           method={method}
           pending={mutation.isPending}
+          error={mutation.error?.message}
           onReasonChange={setReason}
           onMethodChange={setMethod}
           onSubmit={submitPanel}

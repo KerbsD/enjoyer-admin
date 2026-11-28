@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useAuthStore } from "@/lib/auth-state";
 import { ManagerSettings } from "./ManagerSettings";
-import { OrderingNetworkPanel } from "./OrderingNetworkPanel";
 
 export default function Settings() {
   const role = useAuthStore((s) => s.user?.role);
@@ -20,9 +19,6 @@ export default function Settings() {
     );
 
   return (
-    <>
-      <ManagerSettings />
-      {role === "owner" && <OrderingNetworkPanel />}
-    </>
+    <ManagerSettings key={role} canManageOrderingNetwork={role === "owner"} />
   );
 }
